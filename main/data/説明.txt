@@ -1,0 +1,8 @@
+
+edgeNextEdge...それぞれの辺の隣にある辺をリストアップ
+edgeNextNode...それぞれの辺の隣にある頂点をリストアップ
+edgeNextArea...それぞれの辺の隣にあるエリアをリストアップ
+
+NodeNextEdge...それぞれの頂点の隣にある辺をリストアップ
+NodeNextNode...それぞれの頂点の隣にある頂点をリストアップ
+NodeNextArea...それぞれの頂点の隣にあるエリアをリストアップ
