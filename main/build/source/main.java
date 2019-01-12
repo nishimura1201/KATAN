@@ -3,9 +3,9 @@ import processing.data.*;
 import processing.event.*; 
 import processing.opengl.*; 
 
-import java.util.Map; 
 import java.util.*; 
-import java.util.HashMap; 
+import java.io.File; 
+import java.io.FileNotFoundException; 
 
 import java.util.HashMap; 
 import java.util.ArrayList; 
@@ -18,23 +18,24 @@ import java.io.IOException;
 
 public class main extends PApplet {
 
+//import java.util.Map;
+//import java.util.HashMap;
 
 
 
 
 //メインステートマシン
-int drawCount = 0;//経過フレームを数える
-MainStateMachine mainStateMachine = new MainStateMachine();
-KeyPushJudge keyPushJudge = new KeyPushJudge();
-MAP map = new MAP();
+int drawCount;//経過フレームを数える
+MainStateMachine mainStateMachine;
+KeyPushJudge keyPushJudge;
+MAP map;
 
 //画像
-HashMap<String, PImage> ImageList_Area = new HashMap<String, PImage>();
-HashMap<String, PImage> ImageList_Number = new HashMap<String, PImage>();
-
-
+HashMap<String, PImage> ImageList_Area;
+HashMap<String, PImage> ImageList_Number;
 
 public void setup() {
+
   
   noStroke();
   frameRate(60);
@@ -50,6 +51,14 @@ public void init(){
    PFont font = loadFont("YuGothic-Regular-48.vlw");
    textFont(font, 48);
    imageMode(CENTER);
+
+   drawCount = 0;//経過フレームを数える
+   mainStateMachine = new MainStateMachine();
+   keyPushJudge = new KeyPushJudge();
+   map = new MAP();
+   //画像
+   ImageList_Area = new HashMap<String, PImage>();
+   ImageList_Number = new HashMap<String, PImage>();
 
 
   //画像読み込み
@@ -583,6 +592,113 @@ public class MAP{
         area[18].SetHoldNumber(6);
       }
 
+      //各エッジに隣り合うエッジ・ノード・エリアのリストを作る
+      {
+        //各エッジに、隣接しているエッジの番号を格納
+        {
+          String lines[] = loadStrings("data/EdgeNextEdge.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            for(int j=1;j<splited.length;j++){//1列目は対処エッジの番号
+              if(splited[j].equals("") == false){
+                edge[i-1].AddNextEdgeNumber( PApplet.parseInt(splited[j]) );
+              }
+            }
+          }
+        }
+
+        //各エッジに、隣接しているエリアの番号を格納
+        {
+          String lines[] = loadStrings("data/EdgeNextArea.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+              if(splited[j].equals("") == false){
+                edge[i-1].AddNextAreaNumber( PApplet.parseInt(splited[j]) );
+              }
+            }
+          }
+        }
+
+        //各エッジに、隣接しているノードの番号を格納
+        {
+          String lines[] = loadStrings("data/EdgeNextNode.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+              if(splited[j].equals("") == false){
+                edge[i-1].AddNextNodeNumber( PApplet.parseInt(splited[j]) );
+              }
+            }
+          }
+        }
+      }
+
+      //各ノードに隣り合うエッジ・ノード・エリアのリストを作る
+      {
+        //各ノードに、隣接しているエッジの番号を格納
+        {
+          String lines[] = loadStrings("data/NodeNextEdge.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<NodeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            for(int j=1;j<splited.length;j++){//1列目は対処エッジの番号
+              if(splited[j].equals("") == false){
+                node[i-1].AddNextEdgeNumber( PApplet.parseInt(splited[j]) );
+              }
+            }
+          }
+        }
+
+        //各ノードに、隣接しているエリアの番号を格納
+        {
+          String lines[] = loadStrings("data/NodeNextArea.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<NodeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+              if(splited[j].equals("") == false){
+                node[i-1].AddNextAreaNumber( PApplet.parseInt(splited[j]) );
+              }
+            }
+          }
+        }
+
+        //各ノードに、隣接しているノードの番号を格納
+        {
+          String lines[] = loadStrings("data/NodeNextNode.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<NodeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+              if(splited[j].equals("") == false){
+                node[i-1].AddNextNodeNumber( PApplet.parseInt(splited[j]) );
+              }
+            }
+          }
+        }
+      }
+
+      for(int i=0;i<NodeNum;i++){
+        println( node[i].nextNodeNumber );
+      }
+
+
 
     }
 
@@ -617,6 +733,9 @@ public class MAP{
 //フィールドのエッジクラス(道路を敷く所)
 class Edge{
   int playerNumber = 0;//どのプレイヤーが保持している道路か.０なら未使用
+  List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
+  List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
+  List<Integer> nextNodeNumber = new ArrayList<Integer>();//隣り合ったノードの番号を格納する配列.長さは不定
 
   //道路を敷く.引数は取った人の識別番号
   public void BuildRoad(int tmp_playerNumber){
@@ -626,12 +745,30 @@ class Edge{
       println("Edge -> ErrorBuildRoad");
     }
   }
+
+  //隣り合うエッジの番号を格納させる
+  public void AddNextEdgeNumber(int Number){
+    nextEdgeNumber.add(Number);
+  }
+  //隣り合うエリアの番号を格納させる
+  public void AddNextAreaNumber(int Number){
+    nextAreaNumber.add(Number);
+  }
+  //隣り合うノードの番号を格納させる
+  public void AddNextNodeNumber(int Number){
+    nextNodeNumber.add(Number);
+  }
+
 }
 
 //フィールドのノードクラス(都市を置く所)
 class Node{
   int playerNumber = 0;//どのプレイヤーが保持している都市か.０なら未使用
   int CityLevel = 0;//都市のレベル.0:未使用,1:都市レベル1,2:都市レベル2
+  List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
+  List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
+  List<Integer> nextNodeNumber = new ArrayList<Integer>();//隣り合ったノードの番号を格納する配列.長さは不定
+
 
   //村を作る.引数は取った人の識別番号
   public void BuildVillage(int tmp_playerNumber){
@@ -650,6 +787,19 @@ class Node{
     }else{
       println("Node -> ErrorDevelop");
     }
+  }
+
+  //隣り合うエッジの番号を格納させる
+  public void AddNextEdgeNumber(int Number){
+    nextEdgeNumber.add(Number);
+  }
+  //隣り合うエリアの番号を格納させる
+  public void AddNextAreaNumber(int Number){
+    nextAreaNumber.add(Number);
+  }
+  //隣り合うノードの番号を格納させる
+  public void AddNextNodeNumber(int Number){
+    nextNodeNumber.add(Number);
   }
 }
 

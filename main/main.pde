@@ -1,20 +1,21 @@
-import java.util.Map;
+//import java.util.Map;
+//import java.util.HashMap;
 import java.util.*;
-import java.util.HashMap;
+import java.io.File;
+import java.io.FileNotFoundException;
 
 //メインステートマシン
-int drawCount = 0;//経過フレームを数える
-MainStateMachine mainStateMachine = new MainStateMachine();
-KeyPushJudge keyPushJudge = new KeyPushJudge();
-MAP map = new MAP();
+int drawCount;//経過フレームを数える
+MainStateMachine mainStateMachine;
+KeyPushJudge keyPushJudge;
+MAP map;
 
 //画像
-HashMap<String, PImage> ImageList_Area = new HashMap<String, PImage>();
-HashMap<String, PImage> ImageList_Number = new HashMap<String, PImage>();
-
-
+HashMap<String, PImage> ImageList_Area;
+HashMap<String, PImage> ImageList_Number;
 
 void setup() {
+
   size(800, 600, P2D);
   noStroke();
   frameRate(60);
@@ -30,6 +31,14 @@ void init(){
    PFont font = loadFont("YuGothic-Regular-48.vlw");
    textFont(font, 48);
    imageMode(CENTER);
+
+   drawCount = 0;//経過フレームを数える
+   mainStateMachine = new MainStateMachine();
+   keyPushJudge = new KeyPushJudge();
+   map = new MAP();
+   //画像
+   ImageList_Area = new HashMap<String, PImage>();
+   ImageList_Number = new HashMap<String, PImage>();
 
 
   //画像読み込み
