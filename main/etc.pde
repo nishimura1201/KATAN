@@ -5,56 +5,64 @@ public class KeyPushJudge{
   int keypushA = TARGETKEY_RELEASED;
   HashMap<String, Integer > keyList= new HashMap<String, Integer>();
   HashMap<String, Integer > keyListTrigger= new HashMap<String, Integer>();
-  
+
   //コンストラクタ
   public KeyPushJudge(){
     keyList.put("a", TARGETKEY_RELEASED);
     keyList.put("z", TARGETKEY_RELEASED);
     keyList.put("x", TARGETKEY_RELEASED);
     keyList.put("c", TARGETKEY_RELEASED);
+    keyList.put("d", TARGETKEY_RELEASED);
     keyList.put("ENTER", TARGETKEY_RELEASED);
     keyList.put("BACKSPACE", TARGETKEY_RELEASED);
-    
+
     keyListTrigger.put("a", 0);
     keyListTrigger.put("z", 0);
     keyListTrigger.put("x", 0);
     keyListTrigger.put("c", 0);
+    keyListTrigger.put("d", 0);
     keyListTrigger.put("ENTER", 0);
     keyListTrigger.put("BACKSPACE", 0);
   }
-  
+
   void Update(){
-    
-    
+
+
     for (String tmp_key : keyList.keySet()) {
       keyList.put(tmp_key, TARGETKEY_RELEASED);
-    }        
+    }
 
     //PRESSED の判定
     if(keyPressed==true){
       switch(key){
-        case 'a': 
+        case 'a':
           if(keyListTrigger.get("a") == 0){
             keyList.put("a", TARGETKEY_PRESSED);
             keyListTrigger.put("a", 1);
           }
           break;
-        case 'z': 
+        case 'z':
           if(keyListTrigger.get("z") == 0){
             keyList.put("z", TARGETKEY_PRESSED);
             keyListTrigger.put("z", 1);
           }
           break;
-        case 'x': 
+        case 'x':
           if(keyListTrigger.get("x") == 0){
             keyList.put("x", TARGETKEY_PRESSED);
             keyListTrigger.put("x", 1);
           }
           break;
-        case 'c': 
+        case 'c':
           if(keyListTrigger.get("c") == 0){
             keyList.put("c", TARGETKEY_PRESSED);
             keyListTrigger.put("c", 1);
+          }
+          break;
+        case 'd':
+          if(keyListTrigger.get("d") == 0){
+            keyList.put("d", TARGETKEY_PRESSED);
+            keyListTrigger.put("d", 1);
           }
           break;
         case ENTER:
@@ -74,14 +82,14 @@ public class KeyPushJudge{
       //RELEASED に初期化
       for (String tmp_key : keyList.keySet()) {
         keyListTrigger.put(tmp_key, 0);
-      }        
+      }
 
     }
   }
 
-  
-  
-  
+
+
+
   //指定されたキーが押されたのかどうかtrue か false で返す
   boolean GetJudge(String tmp){
     if(keyList.get(tmp) == TARGETKEY_PRESSED)return true;
@@ -89,7 +97,6 @@ public class KeyPushJudge{
     else {println("keyJudgeError");return false;}
   }
 }
-
 void mousePressed() {
   mouseClickTorF = MOUSE_CLICK;
 }

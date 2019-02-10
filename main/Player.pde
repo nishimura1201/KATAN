@@ -2,62 +2,59 @@
 
 //プレイヤーのアクションを管理するステートマシン
 class PlayerStateMAchine extends StateChanger{
-  MainStateMachine MainStateMachine;//メインステートマシン（親を参照するためのもの）
-
   int listIndex = 0;//どの子を選択しようとしているのかというindex
-
   String MyName;//自分の名前
-  String nextPlayerName;//次の順番のプレイヤーの名前
-
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
-  public PlayerStateMAchine(MainStateMachine tmp,String tmp_MyName,String tmp_nextPlayerName){
-    super();
+  public PlayerStateMAchine(String tmp_MyName){
 
-    MainStateMachine = tmp;
     MyName = tmp_MyName;
-    nextPlayerName = tmp_nextPlayerName;
 
-    cardList.add("card1");
-    cardList.add("card2");
-    cardList.add("card3");
-    cardList.add("card4");
-
+    CardAdd("card1");
+    CardAdd("card2");
+    CardAdd("card3");
+    CardAdd("card4");
 
 
-    Add("dice1" ,new Dice(this));
-    Add("choiceCard" ,new ChoiceCard(this));
-    Add("tradeWithOther" ,new TradeWithOther(this));
-    Add("useCard" ,new UseCard(this));
-    Add("development" ,new Development(this));
+    Add(PlayerSelectable.dice.getString()           ,new Dice(this));
+    Add(PlayerSelectable.choiceCard.getString()     ,new ChoiceCard(this));
+    Add(PlayerSelectable.tradeWithOther.getString() ,new TradeWithOther(this));
+    Add(PlayerSelectable.useCard.getString()        ,new UseCard(this));
+    Add(PlayerSelectable.development.getString()    ,new Development(this));
 
   }
 
-  //子の主導権を消し、自分に主導権が移る.子が呼ぶ
+  //子の主導権を消し、自分に主導権が戻る.子が呼ぶ
   public void ChildOFF(){
     Change("empty");
     childOn = false;
   }
 
-  //次このステートマシンの親に当たるメインステートマシンの関数を呼んで、次のプレイヤーにステートを渡す
-  public void ChangetoNextPlayer(){
-    MainStateMachine.Change(nextPlayerName);
+  //所持カードを追加
+  public void CardAdd(String cardName){
+    cardList.add(cardName);
   }
-
   //カードリストを返す
   public List<String> GetCardList(){
     return cardList;
   }
 
-  public void Update(int elapsedTime){
+
+  public String Update(int elapsedTime){
 
     //子に主導権が移ってるならここでの操作は行わんようにっていうやつ
     if(childOn == true){
-      mCurrentState.Update(elapsedTime);//子の呼び出し
+      String order = mCurrentState.Update(elapsedTime);//子の呼び出し
+      switch(order){
+        case "ChildOFF":
+          ChildOFF();
+          break;
+      }
     }else{
+      //次のプレイヤーに所有権を移す
       if(keyPushJudge.GetJudge("a") == true){
-        ChangetoNextPlayer();
+        return "ChangePlayer";
       }
       if(keyPushJudge.GetJudge("z") == true){
         listIndex++;
@@ -68,6 +65,8 @@ class PlayerStateMAchine extends StateChanger{
         Change(childList.get(listIndex));
       }
     }
+
+    return "null";
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -82,15 +81,14 @@ class PlayerStateMAchine extends StateChanger{
 
 //サイコロを振る
 class Dice extends PlayerActionBase{
-  //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
-
   //コンストラクタ
-  public Dice(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public Dice(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -107,12 +105,18 @@ class ChoiceCard extends PlayerActionBase{
   int cardIndex = 0;//カード選択のためのindex
 
   //コンストラクタ
-  public ChoiceCard(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public ChoiceCard(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  //cardListを設定
+  public void SetcardList(List<String> tmp){
+    cardList = tmp;
+  };
+
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -133,12 +137,13 @@ class TradeWithOther extends PlayerActionBase{
   //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public TradeWithOther(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public TradeWithOther(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
 
   };
   public void Render(){
@@ -155,12 +160,13 @@ class UseCard extends PlayerActionBase{
   //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public UseCard(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public UseCard(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -176,12 +182,13 @@ class Development extends PlayerActionBase{
   //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public Development(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public Development(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
 
   };
   public void Render(){

@@ -20,3 +20,19 @@ enum AreaType{
   Grassland,
   Desert
 }
+//プレイヤー関数が持つ選択肢の種類
+enum PlayerSelectable{
+  dice("dice"),
+  choiceCard("choiceCard"),
+  tradeWithOther("tradeWithOther"),
+  useCard("useCard"),
+  development("development");
+
+  private final String text;
+  private PlayerSelectable(final String text){
+    this.text = text;
+  }
+  public String getString(){
+    return this.text;
+  }
+}
