@@ -1,6 +1,6 @@
 /* フィールドに関するクラスとか */
 
-//MAP
+//MAP(Map関数がすでにあるからMAPという表記)
 public class MAP{
     int EdgeNum = 72;//辺の数
     int NodeNum = 54;//ノードの数
@@ -10,7 +10,11 @@ public class MAP{
     Node[] node = new Node[NodeNum];//頂点
     Area[] area = new Area[AreaNum];//エリア
 
-    //HashMap<String, PImage> ImageList = new HashMap<String, PImage>();
+    float position_x[] = new float[NodeNum];//描画するノード位置のx座標
+    float position_y[] = new float[NodeNum];//描画するノード位置のy座標
+    int edgeNextNode1[] = new int[EdgeNum];//エッジの端のノード番号1
+    int edgeNextNode2[] = new int[EdgeNum];//エッジの端のノード番号2
+
 
     //コンストラクタ
     public MAP(){
@@ -19,128 +23,131 @@ public class MAP{
       for(int i=0;i<NodeNum;i++)node[i] = new Node();
       for(int i=0;i<AreaNum;i++)area[i] = new Area();
 
-      //エリアに描画位置の情報を与える
+      //csvの読み込み
       {
-        area[0].SetPositon(-1.0, -2.0);
-        area[1].SetPositon( 0.0, -2.0);
-        area[2].SetPositon( 1.0, -2.0);
-        area[3].SetPositon(-1.5, -1.0);
-        area[4].SetPositon(-0.5, -1.0);
-        area[5].SetPositon( 0.5, -1.0);
-        area[6].SetPositon( 1.5, -1.0);
-        area[7].SetPositon(-2.0, 0.0);
-        area[8].SetPositon(-1.0, 0.0);
-        area[9].SetPositon( 0.0, 0.0);
-        area[10].SetPositon( 1.0, 0.0);
-        area[11].SetPositon( 2.0, 0.0);
-        area[12].SetPositon(-1.5, 1.0);
-        area[13].SetPositon(-0.5, 1.0);
-        area[14].SetPositon( 0.5, 1.0);
-        area[15].SetPositon( 1.5, 1.0);
-        area[16].SetPositon(-1.0, 2.0);
-        area[17].SetPositon( 0.0, 2.0);
-        area[18].SetPositon( 1.0, 2.0);
-      }
-
-      //エリアの種類をセットする
-      {
-        area[0].SetAreaType(AreaType.Forest);
-        area[1].SetAreaType(AreaType.Pasture);
-        area[2].SetAreaType(AreaType.Fields);
-        area[3].SetAreaType(AreaType.Hills);
-        area[4].SetAreaType(AreaType.Mountains);
-        area[5].SetAreaType(AreaType.Hills);
-        area[6].SetAreaType(AreaType.Pasture);
-        area[7].SetAreaType(AreaType.Desert);
-        area[8].SetAreaType(AreaType.Forest);
-        area[9].SetAreaType(AreaType.Fields);
-        area[10].SetAreaType(AreaType.Forest);
-        area[11].SetAreaType(AreaType.Fields);
-        area[12].SetAreaType(AreaType.Hills);
-        area[13].SetAreaType(AreaType.Pasture);
-        area[14].SetAreaType(AreaType.Pasture);
-        area[15].SetAreaType(AreaType.Mountains);
-        area[16].SetAreaType(AreaType.Mountains);
-        area[17].SetAreaType(AreaType.Fields);
-        area[18].SetAreaType(AreaType.Forest);
-      }
-
-      //エリアのホールドナンバーをセットする
-      {
-        area[0].SetHoldNumber(11);
-        area[1].SetHoldNumber(12);
-        area[2].SetHoldNumber(9);
-        area[3].SetHoldNumber(4);
-        area[4].SetHoldNumber(6);
-        area[5].SetHoldNumber(5);
-        area[6].SetHoldNumber(10);
-        area[7].SetHoldNumber(0);
-        area[8].SetHoldNumber(3);
-        area[9].SetHoldNumber(11);
-        area[10].SetHoldNumber(4);
-        area[11].SetHoldNumber(8);
-        area[12].SetHoldNumber(8);
-        area[13].SetHoldNumber(10);
-        area[14].SetHoldNumber(9);
-        area[15].SetHoldNumber(3);
-        area[16].SetHoldNumber(5);
-        area[17].SetHoldNumber(2);
-        area[18].SetHoldNumber(6);
-      }
-
-      //各エッジに隣り合うエッジ・ノード・エリアのリストを作る
-      {
-        //各エッジに、隣接しているエッジの番号を格納
+        //エリアに描画位置の情報を与える
         {
-          String lines[] = loadStrings("data/EdgeNextEdge.csv");
-          String lin;
-          String [] splited;
-          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-            lin = lines[i];
-            splited = split(lin,',');
-            for(int j=1;j<splited.length;j++){//1列目は対処エッジの番号
-              if(splited[j].equals("") == false){
-                edge[i-1].AddNextEdgeNumber( int(splited[j]) );
+          area[0].SetPositon(-1.0, -2.0);
+          area[1].SetPositon( 0.0, -2.0);
+          area[2].SetPositon( 1.0, -2.0);
+          area[3].SetPositon(-1.5, -1.0);
+          area[4].SetPositon(-0.5, -1.0);
+          area[5].SetPositon( 0.5, -1.0);
+          area[6].SetPositon( 1.5, -1.0);
+          area[7].SetPositon(-2.0, 0.0);
+          area[8].SetPositon(-1.0, 0.0);
+          area[9].SetPositon( 0.0, 0.0);
+          area[10].SetPositon( 1.0, 0.0);
+          area[11].SetPositon( 2.0, 0.0);
+          area[12].SetPositon(-1.5, 1.0);
+          area[13].SetPositon(-0.5, 1.0);
+          area[14].SetPositon( 0.5, 1.0);
+          area[15].SetPositon( 1.5, 1.0);
+          area[16].SetPositon(-1.0, 2.0);
+          area[17].SetPositon( 0.0, 2.0);
+          area[18].SetPositon( 1.0, 2.0);
+        }
+
+        //エリアの種類をセットする
+        {
+          area[0].SetAreaType(AreaType.Forest);
+          area[1].SetAreaType(AreaType.Pasture);
+          area[2].SetAreaType(AreaType.Fields);
+          area[3].SetAreaType(AreaType.Hills);
+          area[4].SetAreaType(AreaType.Mountains);
+          area[5].SetAreaType(AreaType.Hills);
+          area[6].SetAreaType(AreaType.Pasture);
+          area[7].SetAreaType(AreaType.Desert);
+          area[8].SetAreaType(AreaType.Forest);
+          area[9].SetAreaType(AreaType.Fields);
+          area[10].SetAreaType(AreaType.Forest);
+          area[11].SetAreaType(AreaType.Fields);
+          area[12].SetAreaType(AreaType.Hills);
+          area[13].SetAreaType(AreaType.Pasture);
+          area[14].SetAreaType(AreaType.Pasture);
+          area[15].SetAreaType(AreaType.Mountains);
+          area[16].SetAreaType(AreaType.Mountains);
+          area[17].SetAreaType(AreaType.Fields);
+          area[18].SetAreaType(AreaType.Forest);
+        }
+
+        //エリアのホールドナンバーをセットする
+        {
+          area[0].SetHoldNumber(11);
+          area[1].SetHoldNumber(12);
+          area[2].SetHoldNumber(9);
+          area[3].SetHoldNumber(4);
+          area[4].SetHoldNumber(6);
+          area[5].SetHoldNumber(5);
+          area[6].SetHoldNumber(10);
+          area[7].SetHoldNumber(0);
+          area[8].SetHoldNumber(3);
+          area[9].SetHoldNumber(11);
+          area[10].SetHoldNumber(4);
+          area[11].SetHoldNumber(8);
+          area[12].SetHoldNumber(8);
+          area[13].SetHoldNumber(10);
+          area[14].SetHoldNumber(9);
+          area[15].SetHoldNumber(3);
+          area[16].SetHoldNumber(5);
+          area[17].SetHoldNumber(2);
+          area[18].SetHoldNumber(6);
+        }
+
+        //各エッジに隣り合うエッジ・ノード・エリアのリストを作る
+        {
+          //各エッジに、隣接しているエッジの番号を格納
+          {
+            String lines[] = loadStrings("data/EdgeNextEdge.csv");
+            String lin;
+            String [] splited;
+            for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+              lin = lines[i];
+              splited = split(lin,',');
+              for(int j=1;j<splited.length;j++){//1列目は対処エッジの番号
+                if(splited[j].equals("") == false){
+                  edge[i-1].AddNextEdgeNumber( int(splited[j]) );
+                }
               }
             }
           }
-        }
 
-        //各エッジに、隣接しているエリアの番号を格納
-        {
-          String lines[] = loadStrings("data/EdgeNextArea.csv");
-          String lin;
-          String [] splited;
-          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-            lin = lines[i];
-            splited = split(lin,',');
-            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
-              if(splited[j].equals("") == false){
-                edge[i-1].AddNextAreaNumber( int(splited[j]) );
+          //各エッジに、隣接しているエリアの番号を格納
+          {
+            String lines[] = loadStrings("data/EdgeNextArea.csv");
+            String lin;
+            String [] splited;
+            for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+              lin = lines[i];
+              splited = split(lin,',');
+              for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+                if(splited[j].equals("") == false){
+                  edge[i-1].AddNextAreaNumber( int(splited[j]) );
+                }
               }
             }
           }
-        }
 
-        //各エッジに、隣接しているノードの番号を格納
-        {
-          String lines[] = loadStrings("data/EdgeNextNode.csv");
-          String lin;
-          String [] splited;
-          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-            lin = lines[i];
-            splited = split(lin,',');
-            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
-              if(splited[j].equals("") == false){
-                edge[i-1].AddNextNodeNumber( int(splited[j]) );
+          //各エッジに、隣接しているノードの番号を格納
+          {
+            String lines[] = loadStrings("data/EdgeNextNode.csv");
+            String lin;
+            String [] splited;
+            for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+              lin = lines[i];
+              splited = split(lin,',');
+              for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+                if(splited[j].equals("") == false){
+                  edge[i-1].AddNextNodeNumber( int(splited[j]) );
+                }
               }
             }
           }
-        }
-      }
 
-      //各ノードに隣り合うエッジ・ノード・エリアのリストを作る
-      {
+        }
+
+
+
         //各ノードに、隣接しているエッジの番号を格納
         {
           String lines[] = loadStrings("data/NodeNextEdge.csv");
@@ -188,14 +195,21 @@ public class MAP{
             }
           }
         }
+
+
+        //ノードの描画座標の位置を格納
+        {
+          String lines[] = loadStrings("data/NodeDrawPosition.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<NodeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            position_x[i-1] = float(splited[1]);//x座標
+            position_y[i-1] = float(splited[2])/4;//y座標
+          }
+        }
       }
-
-      for(int i=0;i<NodeNum;i++){
-        println( node[i].nextNodeNumber );
-      }
-
-
-
     }
 
 
@@ -224,6 +238,24 @@ public class MAP{
 
       popMatrix();
     }
+    public void Debug_Render(){
+      pushMatrix();
+      translate(500, 300);
+      stroke( 100, 0, 0 );
+      strokeWeight( 3 );
+      for(int i=0;i<EdgeNum;i++){
+        float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+        float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+        float y1 = position_y[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+        float y2 = position_y[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+        line(x1,y1,x2,y2);
+      }
+      popMatrix();
+    }
+    //エッジの所有者の設定
+    void SetEdgeOwner(){
+    }
+
 }
 
 //フィールドのエッジクラス(道路を敷く所)

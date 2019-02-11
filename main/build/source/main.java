@@ -28,7 +28,9 @@ public class main extends PApplet {
 int drawCount;//経過フレームを数える
 MainStateMachine mainStateMachine;
 KeyPushJudge keyPushJudge;
+SetOwner setOwner;
 MAP map;
+Debug debug;
 
 //画像
 HashMap<String, PImage> ImageList_Area;
@@ -56,6 +58,11 @@ public void init(){
    mainStateMachine = new MainStateMachine();
    keyPushJudge = new KeyPushJudge();
    map = new MAP();
+   debug = new Debug();
+
+   //エッジとノードの所有者変更用クラス
+   setOwner = new SetOwner();
+
    //画像
    ImageList_Area = new HashMap<String, PImage>();
    ImageList_Number = new HashMap<String, PImage>();
@@ -84,7 +91,7 @@ public void init(){
 
 
 public void draw() {
-  fill(250, 0, 255, 255);
+  fill(0, 0, 255);//HSB
   rect(0, 0, width, height);
   keyPushJudge.Update();//キーが押されたかどうかの判定
 
@@ -92,30 +99,51 @@ public void draw() {
   drawCount++;
 
   mainStateMachine.Update(drawCount);
+  debug.Update();
+
   mainStateMachine.Render();
-
   map.Render();
-
+  debug.Render();
+  //setOwner.Render();
 }
 //メインのステートマシンやインタフェイスについて記述
 
 //メインステートマシン
 class MainStateMachine extends StateChanger{
-
+    String orderPlayer[] = new String[3];//プレイヤーのターン順序
+    int whoseTurn = 0;//今誰のターンなのか管理する
     //コンストラクタ
     public MainStateMachine(){
       super();
 
-      Add("player1",new PlayerStateMAchine(this, "player1","player2"));
-      Add("player2",new PlayerStateMAchine(this, "player2","player3"));
-      Add("player3",new PlayerStateMAchine(this, "player3","player1"));
-
+      Add("player1",new PlayerStateMAchine( "player1"));
+      Add("player2",new PlayerStateMAchine( "player2"));
+      Add("player3",new PlayerStateMAchine( "player3"));
+      //プレイヤーのターン順序
+      orderPlayer[0] = "player1";
+      orderPlayer[1] = "player2";
+      orderPlayer[2] = "player3";
+      //最初はplayer1から
       Change("player1");
     }
 
 
-    public void Update(int elapsedTime){
-        mCurrentState.Update(elapsedTime);
+    public String Update(int elapsedTime){
+        String order = mCurrentState.Update(elapsedTime);
+
+        switch(order){
+          //次のプレイヤーにステートを移す
+          case "ChangePlayer":
+            if(whoseTurn+1 == orderPlayer.length){
+              whoseTurn = 0;
+            }else{
+              whoseTurn+=1;
+            }
+            Change(orderPlayer[whoseTurn]);
+            break;
+        }
+
+        return "null";
     }
 
     public void Render(){
@@ -152,7 +180,7 @@ public class StateChanger implements IState{
     mStates.put(name,state);
     childList.add(name);//子リストに追加
   }
-  public void Update(int elapsedTime){};
+  public String Update(int elapsedTime){return "null";};
   public void Render(){};
   public void OnEnter(){};
   public void OnExit(){};
@@ -161,24 +189,23 @@ public class StateChanger implements IState{
 //複数の子を管理するステートマシンのベースとなるクラス
 public class PlayerActionBase extends StateChanger{
   PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
-
-
   //コンストラクタ
-  public PlayerActionBase(PlayerStateMAchine tmp_playerStateMachine){
+  public PlayerActionBase(PlayerStateMAchine tmp){
     super();
-    playerStateMachine = tmp_playerStateMachine;
+    playerStateMachine = tmp;
   }
 
-  public void playerStateMachineChildOFF(){
+  public String playerStateMachineChildOFF(){
     if(keyPushJudge.GetJudge("BACKSPACE") == true){
-      playerStateMachine.ChildOFF();
+      return "ChildOFF";
     }
+    return "null";
   };
 }
 
 //ステートのベースとなるインタフェイス
 public interface IState{
-  public void Update(int elapsedTime);
+  public String Update(int elapsedTime);
   public void Render();
   public void OnEnter();
   public void OnExit();
@@ -186,7 +213,7 @@ public interface IState{
 
 //空のステート
 class emptyState implements IState{
-  public void Update(int elapsedTime){};
+  public String Update(int elapsedTime){return "null";};
   public void Render(){};
   public void OnEnter(){};
   public void OnExit(){};
@@ -213,66 +240,79 @@ enum AreaType{
   Grassland,
   Desert
 }
+//プレイヤー関数が持つ選択肢の種類
+enum PlayerSelectable{
+  dice("dice"),
+  choiceCard("choiceCard"),
+  tradeWithOther("tradeWithOther"),
+  useCard("useCard"),
+  development("development");
+
+  private final String text;
+  private PlayerSelectable(final String text){
+    this.text = text;
+  }
+  public String getString(){
+    return this.text;
+  }
+}
 //プレイヤーのステートマシンなどについて記述
 
 //プレイヤーのアクションを管理するステートマシン
 class PlayerStateMAchine extends StateChanger{
-  MainStateMachine MainStateMachine;//メインステートマシン（親を参照するためのもの）
-
   int listIndex = 0;//どの子を選択しようとしているのかというindex
-
   String MyName;//自分の名前
-  String nextPlayerName;//次の順番のプレイヤーの名前
-
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
-  public PlayerStateMAchine(MainStateMachine tmp,String tmp_MyName,String tmp_nextPlayerName){
-    super();
+  public PlayerStateMAchine(String tmp_MyName){
 
-    MainStateMachine = tmp;
     MyName = tmp_MyName;
-    nextPlayerName = tmp_nextPlayerName;
 
-    cardList.add("card1");
-    cardList.add("card2");
-    cardList.add("card3");
-    cardList.add("card4");
-
+    CardAdd("card1");
+    CardAdd("card2");
+    CardAdd("card3");
+    CardAdd("card4");
 
 
-    Add("dice1" ,new Dice(this));
-    Add("choiceCard" ,new ChoiceCard(this));
-    Add("tradeWithOther" ,new TradeWithOther(this));
-    Add("useCard" ,new UseCard(this));
-    Add("development" ,new Development(this));
+    Add(PlayerSelectable.dice.getString()           ,new Dice(this));
+    Add(PlayerSelectable.choiceCard.getString()     ,new ChoiceCard(this));
+    Add(PlayerSelectable.tradeWithOther.getString() ,new TradeWithOther(this));
+    Add(PlayerSelectable.useCard.getString()        ,new UseCard(this));
+    Add(PlayerSelectable.development.getString()    ,new Development(this));
 
   }
 
-  //子の主導権を消し、自分に主導権が移る.子が呼ぶ
+  //子の主導権を消し、自分に主導権が戻る.子が呼ぶ
   public void ChildOFF(){
     Change("empty");
     childOn = false;
   }
 
-  //次このステートマシンの親に当たるメインステートマシンの関数を呼んで、次のプレイヤーにステートを渡す
-  public void ChangetoNextPlayer(){
-    MainStateMachine.Change(nextPlayerName);
+  //所持カードを追加
+  public void CardAdd(String cardName){
+    cardList.add(cardName);
   }
-
   //カードリストを返す
   public List<String> GetCardList(){
     return cardList;
   }
 
-  public void Update(int elapsedTime){
+
+  public String Update(int elapsedTime){
 
     //子に主導権が移ってるならここでの操作は行わんようにっていうやつ
     if(childOn == true){
-      mCurrentState.Update(elapsedTime);//子の呼び出し
+      String order = mCurrentState.Update(elapsedTime);//子の呼び出し
+      switch(order){
+        case "ChildOFF":
+          ChildOFF();
+          break;
+      }
     }else{
+      //次のプレイヤーに所有権を移す
       if(keyPushJudge.GetJudge("a") == true){
-        ChangetoNextPlayer();
+        return "ChangePlayer";
       }
       if(keyPushJudge.GetJudge("z") == true){
         listIndex++;
@@ -283,6 +323,8 @@ class PlayerStateMAchine extends StateChanger{
         Change(childList.get(listIndex));
       }
     }
+
+    return "null";
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -297,15 +339,14 @@ class PlayerStateMAchine extends StateChanger{
 
 //サイコロを振る
 class Dice extends PlayerActionBase{
-  //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
-
   //コンストラクタ
-  public Dice(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public Dice(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -322,12 +363,18 @@ class ChoiceCard extends PlayerActionBase{
   int cardIndex = 0;//カード選択のためのindex
 
   //コンストラクタ
-  public ChoiceCard(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public ChoiceCard(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  //cardListを設定
+  public void SetcardList(List<String> tmp){
+    cardList = tmp;
+  };
+
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -348,12 +395,13 @@ class TradeWithOther extends PlayerActionBase{
   //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public TradeWithOther(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public TradeWithOther(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
 
   };
   public void Render(){
@@ -370,12 +418,13 @@ class UseCard extends PlayerActionBase{
   //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public UseCard(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public UseCard(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -391,12 +440,13 @@ class Development extends PlayerActionBase{
   //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public Development(PlayerStateMAchine tmp_playerStateMachine){
-    super(tmp_playerStateMachine);
+  public Development(PlayerStateMAchine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
   }
 
-  public void Update(int elapsedTime){
-    playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  public String Update(int elapsedTime){
+    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
 
   };
   public void Render(){
@@ -407,6 +457,111 @@ class Development extends PlayerActionBase{
   public void OnEnter(){};
   public void OnExit(){};
 }
+//デバッグモード
+class Debug{
+  boolean debugFlag = false;
+
+  //コンストラクタ
+  Debug(){
+  }
+
+
+  //更新
+  public void Update(){
+    if(keyPushJudge.GetJudge("d") == true){
+      if(debugFlag == true)
+        debugFlag = false;
+      else
+        debugFlag = true;
+    }
+  }
+
+  //描画
+  public void Render(){
+    //エッジの太描き
+    if(debugFlag == true){
+      map.Debug_Render();
+    }
+  }
+}
+
+//エッジとノードの所有者を設定するための関数が詰まったクラス
+class SetOwner{
+  int EdgeNum = 72;//辺の数
+  int NodeNum = 54;//ノードの数
+
+  int edgeHolder[] = new int[EdgeNum];//エッジの所持者を格納する
+  int nodeHolder[] = new int[NodeNum];//ノードの所持者を格納する
+  float position_x[] = new float[NodeNum];//描画する頂点位置のx座標
+  float position_y[] = new float[NodeNum];//描画する頂点位置のy座標
+  int edgeNextNode1[] = new int[EdgeNum];//エッジの端のノード番号1
+  int edgeNextNode2[] = new int[EdgeNum];//エッジの端のノード番号2
+
+
+  //コンストラクタ
+  SetOwner(){
+    //初期化
+    for(int i=0;i<EdgeNum;i++){
+      edgeHolder[i] = 0;
+    }
+    for(int i=0;i<NodeNum;i++){
+      nodeHolder[i] = 0;
+    }
+
+    //ノードの描画座標の位置を格納
+    {
+      String lines[] = loadStrings("data/NodeDrawPosition.csv");
+      String lin;
+      String [] splited;
+      for(int i=1;i<NodeNum+1;i++){//1行目はラベル
+        lin = lines[i];
+        splited = split(lin,',');
+        position_x[i-1] = PApplet.parseFloat(splited[1]);//x座標
+        position_y[i-1] = PApplet.parseFloat(splited[2])/4;//y座標
+      }
+    }
+
+    //エッジの端にあるノードの番号を格納
+    {
+      String lines[] = loadStrings("data/EdgeNextNode.csv");
+      String lin;
+      String [] splited;
+      for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+        lin = lines[i];
+        splited = split(lin,',');
+        edgeNextNode1[i-1] = PApplet.parseInt(splited[1]);
+        edgeNextNode2[i-1] = PApplet.parseInt(splited[2]);
+      }
+    }
+
+  }
+
+  //エッジの所有者の設定
+  public void SetEdgeOwner(){
+
+  }
+
+  //更新
+  public void Update(){
+
+  }
+
+  //描画
+  public void Render(){
+    pushMatrix();
+    translate(500, 300);
+    stroke( 100, 0, 0 );
+    strokeWeight( 3 );
+    for(int i=0;i<EdgeNum;i++){
+      float x1 = position_x[ edgeNextNode1[i] ] * AREA_LENGTH;
+      float x2 = position_x[ edgeNextNode2[i] ] * AREA_LENGTH;
+      float y1 = position_y[ edgeNextNode1[i] ] * AREA_LENGTH;
+      float y2 = position_y[ edgeNextNode2[i] ] * AREA_LENGTH;
+      line(x1,y1,x2,y2);
+    }
+    popMatrix();
+  }
+}
 int mouseClickTorF = MOUSE_NOTCLICK;
 
 //キーが押された瞬間をとらえるためのクラス
@@ -414,56 +569,64 @@ public class KeyPushJudge{
   int keypushA = TARGETKEY_RELEASED;
   HashMap<String, Integer > keyList= new HashMap<String, Integer>();
   HashMap<String, Integer > keyListTrigger= new HashMap<String, Integer>();
-  
+
   //コンストラクタ
   public KeyPushJudge(){
     keyList.put("a", TARGETKEY_RELEASED);
     keyList.put("z", TARGETKEY_RELEASED);
     keyList.put("x", TARGETKEY_RELEASED);
     keyList.put("c", TARGETKEY_RELEASED);
+    keyList.put("d", TARGETKEY_RELEASED);
     keyList.put("ENTER", TARGETKEY_RELEASED);
     keyList.put("BACKSPACE", TARGETKEY_RELEASED);
-    
+
     keyListTrigger.put("a", 0);
     keyListTrigger.put("z", 0);
     keyListTrigger.put("x", 0);
     keyListTrigger.put("c", 0);
+    keyListTrigger.put("d", 0);
     keyListTrigger.put("ENTER", 0);
     keyListTrigger.put("BACKSPACE", 0);
   }
-  
+
   public void Update(){
-    
-    
+
+
     for (String tmp_key : keyList.keySet()) {
       keyList.put(tmp_key, TARGETKEY_RELEASED);
-    }        
+    }
 
     //PRESSED の判定
     if(keyPressed==true){
       switch(key){
-        case 'a': 
+        case 'a':
           if(keyListTrigger.get("a") == 0){
             keyList.put("a", TARGETKEY_PRESSED);
             keyListTrigger.put("a", 1);
           }
           break;
-        case 'z': 
+        case 'z':
           if(keyListTrigger.get("z") == 0){
             keyList.put("z", TARGETKEY_PRESSED);
             keyListTrigger.put("z", 1);
           }
           break;
-        case 'x': 
+        case 'x':
           if(keyListTrigger.get("x") == 0){
             keyList.put("x", TARGETKEY_PRESSED);
             keyListTrigger.put("x", 1);
           }
           break;
-        case 'c': 
+        case 'c':
           if(keyListTrigger.get("c") == 0){
             keyList.put("c", TARGETKEY_PRESSED);
             keyListTrigger.put("c", 1);
+          }
+          break;
+        case 'd':
+          if(keyListTrigger.get("d") == 0){
+            keyList.put("d", TARGETKEY_PRESSED);
+            keyListTrigger.put("d", 1);
           }
           break;
         case ENTER:
@@ -483,14 +646,14 @@ public class KeyPushJudge{
       //RELEASED に初期化
       for (String tmp_key : keyList.keySet()) {
         keyListTrigger.put(tmp_key, 0);
-      }        
+      }
 
     }
   }
 
-  
-  
-  
+
+
+
   //指定されたキーが押されたのかどうかtrue か false で返す
   public boolean GetJudge(String tmp){
     if(keyList.get(tmp) == TARGETKEY_PRESSED)return true;
@@ -498,13 +661,12 @@ public class KeyPushJudge{
     else {println("keyJudgeError");return false;}
   }
 }
-
 public void mousePressed() {
   mouseClickTorF = MOUSE_CLICK;
 }
 /* フィールドに関するクラスとか */
 
-//MAP
+//MAP(Map関数がすでにあるからMAPという表記)
 public class MAP{
     int EdgeNum = 72;//辺の数
     int NodeNum = 54;//ノードの数
@@ -514,7 +676,11 @@ public class MAP{
     Node[] node = new Node[NodeNum];//頂点
     Area[] area = new Area[AreaNum];//エリア
 
-    //HashMap<String, PImage> ImageList = new HashMap<String, PImage>();
+    float position_x[] = new float[NodeNum];//描画するノード位置のx座標
+    float position_y[] = new float[NodeNum];//描画するノード位置のy座標
+    int edgeNextNode1[] = new int[EdgeNum];//エッジの端のノード番号1
+    int edgeNextNode2[] = new int[EdgeNum];//エッジの端のノード番号2
+
 
     //コンストラクタ
     public MAP(){
@@ -523,128 +689,131 @@ public class MAP{
       for(int i=0;i<NodeNum;i++)node[i] = new Node();
       for(int i=0;i<AreaNum;i++)area[i] = new Area();
 
-      //エリアに描画位置の情報を与える
+      //csvの読み込み
       {
-        area[0].SetPositon(-1.0f, -2.0f);
-        area[1].SetPositon( 0.0f, -2.0f);
-        area[2].SetPositon( 1.0f, -2.0f);
-        area[3].SetPositon(-1.5f, -1.0f);
-        area[4].SetPositon(-0.5f, -1.0f);
-        area[5].SetPositon( 0.5f, -1.0f);
-        area[6].SetPositon( 1.5f, -1.0f);
-        area[7].SetPositon(-2.0f, 0.0f);
-        area[8].SetPositon(-1.0f, 0.0f);
-        area[9].SetPositon( 0.0f, 0.0f);
-        area[10].SetPositon( 1.0f, 0.0f);
-        area[11].SetPositon( 2.0f, 0.0f);
-        area[12].SetPositon(-1.5f, 1.0f);
-        area[13].SetPositon(-0.5f, 1.0f);
-        area[14].SetPositon( 0.5f, 1.0f);
-        area[15].SetPositon( 1.5f, 1.0f);
-        area[16].SetPositon(-1.0f, 2.0f);
-        area[17].SetPositon( 0.0f, 2.0f);
-        area[18].SetPositon( 1.0f, 2.0f);
-      }
-
-      //エリアの種類をセットする
-      {
-        area[0].SetAreaType(AreaType.Forest);
-        area[1].SetAreaType(AreaType.Pasture);
-        area[2].SetAreaType(AreaType.Fields);
-        area[3].SetAreaType(AreaType.Hills);
-        area[4].SetAreaType(AreaType.Mountains);
-        area[5].SetAreaType(AreaType.Hills);
-        area[6].SetAreaType(AreaType.Pasture);
-        area[7].SetAreaType(AreaType.Desert);
-        area[8].SetAreaType(AreaType.Forest);
-        area[9].SetAreaType(AreaType.Fields);
-        area[10].SetAreaType(AreaType.Forest);
-        area[11].SetAreaType(AreaType.Fields);
-        area[12].SetAreaType(AreaType.Hills);
-        area[13].SetAreaType(AreaType.Pasture);
-        area[14].SetAreaType(AreaType.Pasture);
-        area[15].SetAreaType(AreaType.Mountains);
-        area[16].SetAreaType(AreaType.Mountains);
-        area[17].SetAreaType(AreaType.Fields);
-        area[18].SetAreaType(AreaType.Forest);
-      }
-
-      //エリアのホールドナンバーをセットする
-      {
-        area[0].SetHoldNumber(11);
-        area[1].SetHoldNumber(12);
-        area[2].SetHoldNumber(9);
-        area[3].SetHoldNumber(4);
-        area[4].SetHoldNumber(6);
-        area[5].SetHoldNumber(5);
-        area[6].SetHoldNumber(10);
-        area[7].SetHoldNumber(0);
-        area[8].SetHoldNumber(3);
-        area[9].SetHoldNumber(11);
-        area[10].SetHoldNumber(4);
-        area[11].SetHoldNumber(8);
-        area[12].SetHoldNumber(8);
-        area[13].SetHoldNumber(10);
-        area[14].SetHoldNumber(9);
-        area[15].SetHoldNumber(3);
-        area[16].SetHoldNumber(5);
-        area[17].SetHoldNumber(2);
-        area[18].SetHoldNumber(6);
-      }
-
-      //各エッジに隣り合うエッジ・ノード・エリアのリストを作る
-      {
-        //各エッジに、隣接しているエッジの番号を格納
+        //エリアに描画位置の情報を与える
         {
-          String lines[] = loadStrings("data/EdgeNextEdge.csv");
-          String lin;
-          String [] splited;
-          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-            lin = lines[i];
-            splited = split(lin,',');
-            for(int j=1;j<splited.length;j++){//1列目は対処エッジの番号
-              if(splited[j].equals("") == false){
-                edge[i-1].AddNextEdgeNumber( PApplet.parseInt(splited[j]) );
+          area[0].SetPositon(-1.0f, -2.0f);
+          area[1].SetPositon( 0.0f, -2.0f);
+          area[2].SetPositon( 1.0f, -2.0f);
+          area[3].SetPositon(-1.5f, -1.0f);
+          area[4].SetPositon(-0.5f, -1.0f);
+          area[5].SetPositon( 0.5f, -1.0f);
+          area[6].SetPositon( 1.5f, -1.0f);
+          area[7].SetPositon(-2.0f, 0.0f);
+          area[8].SetPositon(-1.0f, 0.0f);
+          area[9].SetPositon( 0.0f, 0.0f);
+          area[10].SetPositon( 1.0f, 0.0f);
+          area[11].SetPositon( 2.0f, 0.0f);
+          area[12].SetPositon(-1.5f, 1.0f);
+          area[13].SetPositon(-0.5f, 1.0f);
+          area[14].SetPositon( 0.5f, 1.0f);
+          area[15].SetPositon( 1.5f, 1.0f);
+          area[16].SetPositon(-1.0f, 2.0f);
+          area[17].SetPositon( 0.0f, 2.0f);
+          area[18].SetPositon( 1.0f, 2.0f);
+        }
+
+        //エリアの種類をセットする
+        {
+          area[0].SetAreaType(AreaType.Forest);
+          area[1].SetAreaType(AreaType.Pasture);
+          area[2].SetAreaType(AreaType.Fields);
+          area[3].SetAreaType(AreaType.Hills);
+          area[4].SetAreaType(AreaType.Mountains);
+          area[5].SetAreaType(AreaType.Hills);
+          area[6].SetAreaType(AreaType.Pasture);
+          area[7].SetAreaType(AreaType.Desert);
+          area[8].SetAreaType(AreaType.Forest);
+          area[9].SetAreaType(AreaType.Fields);
+          area[10].SetAreaType(AreaType.Forest);
+          area[11].SetAreaType(AreaType.Fields);
+          area[12].SetAreaType(AreaType.Hills);
+          area[13].SetAreaType(AreaType.Pasture);
+          area[14].SetAreaType(AreaType.Pasture);
+          area[15].SetAreaType(AreaType.Mountains);
+          area[16].SetAreaType(AreaType.Mountains);
+          area[17].SetAreaType(AreaType.Fields);
+          area[18].SetAreaType(AreaType.Forest);
+        }
+
+        //エリアのホールドナンバーをセットする
+        {
+          area[0].SetHoldNumber(11);
+          area[1].SetHoldNumber(12);
+          area[2].SetHoldNumber(9);
+          area[3].SetHoldNumber(4);
+          area[4].SetHoldNumber(6);
+          area[5].SetHoldNumber(5);
+          area[6].SetHoldNumber(10);
+          area[7].SetHoldNumber(0);
+          area[8].SetHoldNumber(3);
+          area[9].SetHoldNumber(11);
+          area[10].SetHoldNumber(4);
+          area[11].SetHoldNumber(8);
+          area[12].SetHoldNumber(8);
+          area[13].SetHoldNumber(10);
+          area[14].SetHoldNumber(9);
+          area[15].SetHoldNumber(3);
+          area[16].SetHoldNumber(5);
+          area[17].SetHoldNumber(2);
+          area[18].SetHoldNumber(6);
+        }
+
+        //各エッジに隣り合うエッジ・ノード・エリアのリストを作る
+        {
+          //各エッジに、隣接しているエッジの番号を格納
+          {
+            String lines[] = loadStrings("data/EdgeNextEdge.csv");
+            String lin;
+            String [] splited;
+            for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+              lin = lines[i];
+              splited = split(lin,',');
+              for(int j=1;j<splited.length;j++){//1列目は対処エッジの番号
+                if(splited[j].equals("") == false){
+                  edge[i-1].AddNextEdgeNumber( PApplet.parseInt(splited[j]) );
+                }
               }
             }
           }
-        }
 
-        //各エッジに、隣接しているエリアの番号を格納
-        {
-          String lines[] = loadStrings("data/EdgeNextArea.csv");
-          String lin;
-          String [] splited;
-          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-            lin = lines[i];
-            splited = split(lin,',');
-            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
-              if(splited[j].equals("") == false){
-                edge[i-1].AddNextAreaNumber( PApplet.parseInt(splited[j]) );
+          //各エッジに、隣接しているエリアの番号を格納
+          {
+            String lines[] = loadStrings("data/EdgeNextArea.csv");
+            String lin;
+            String [] splited;
+            for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+              lin = lines[i];
+              splited = split(lin,',');
+              for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+                if(splited[j].equals("") == false){
+                  edge[i-1].AddNextAreaNumber( PApplet.parseInt(splited[j]) );
+                }
               }
             }
           }
-        }
 
-        //各エッジに、隣接しているノードの番号を格納
-        {
-          String lines[] = loadStrings("data/EdgeNextNode.csv");
-          String lin;
-          String [] splited;
-          for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-            lin = lines[i];
-            splited = split(lin,',');
-            for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
-              if(splited[j].equals("") == false){
-                edge[i-1].AddNextNodeNumber( PApplet.parseInt(splited[j]) );
+          //各エッジに、隣接しているノードの番号を格納
+          {
+            String lines[] = loadStrings("data/EdgeNextNode.csv");
+            String lin;
+            String [] splited;
+            for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
+              lin = lines[i];
+              splited = split(lin,',');
+              for(int j=1;j<splited.length;j++){//1列目は対象エッジの番号
+                if(splited[j].equals("") == false){
+                  edge[i-1].AddNextNodeNumber( PApplet.parseInt(splited[j]) );
+                }
               }
             }
           }
-        }
-      }
 
-      //各ノードに隣り合うエッジ・ノード・エリアのリストを作る
-      {
+        }
+
+
+
         //各ノードに、隣接しているエッジの番号を格納
         {
           String lines[] = loadStrings("data/NodeNextEdge.csv");
@@ -692,14 +861,21 @@ public class MAP{
             }
           }
         }
+
+
+        //ノードの描画座標の位置を格納
+        {
+          String lines[] = loadStrings("data/NodeDrawPosition.csv");
+          String lin;
+          String [] splited;
+          for(int i=1;i<NodeNum+1;i++){//1行目はラベル
+            lin = lines[i];
+            splited = split(lin,',');
+            position_x[i-1] = PApplet.parseFloat(splited[1]);//x座標
+            position_y[i-1] = PApplet.parseFloat(splited[2])/4;//y座標
+          }
+        }
       }
-
-      for(int i=0;i<NodeNum;i++){
-        println( node[i].nextNodeNumber );
-      }
-
-
-
     }
 
 
@@ -728,6 +904,24 @@ public class MAP{
 
       popMatrix();
     }
+    public void Debug_Render(){
+      pushMatrix();
+      translate(500, 300);
+      stroke( 100, 0, 0 );
+      strokeWeight( 3 );
+      for(int i=0;i<EdgeNum;i++){
+        float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+        float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+        float y1 = position_y[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+        float y2 = position_y[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+        line(x1,y1,x2,y2);
+      }
+      popMatrix();
+    }
+    //エッジの所有者の設定
+    public void SetEdgeOwner(){
+    }
+
 }
 
 //フィールドのエッジクラス(道路を敷く所)
