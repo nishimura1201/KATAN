@@ -1,31 +1,83 @@
 //デバッグモード
-class Debug{
-  boolean debugFlag = false;
-
+class Debug implements IState{
+  int targetEdge = 0;//所有者を変更しようとするエッジの番号
+  int targetHolder = 0;//設定しようとするプレイヤー番号,0なら未使用
   //コンストラクタ
   Debug(){
+    //エッジの初期設定
+    fieldInfomation.SetEdgeOwner(0, 1);
+    fieldInfomation.SetEdgeOwner(1, 1);
+    fieldInfomation.SetEdgeOwner(2, 1);
+    fieldInfomation.SetEdgeOwner(3, 1);
+    fieldInfomation.SetEdgeOwner(4, 1);
+    fieldInfomation.SetEdgeOwner(5, 1);
+
+    fieldInfomation.SetEdgeOwner(6, 2);
+    fieldInfomation.SetEdgeOwner(10, 2);
+    fieldInfomation.SetEdgeOwner(11, 2);
+    fieldInfomation.SetEdgeOwner(12, 2);
+    fieldInfomation.SetEdgeOwner(13, 2);
+    fieldInfomation.SetEdgeOwner(14, 2);
+    fieldInfomation.SetEdgeOwner(15, 2);
+
   }
 
+  public String Update(int elapsedTime){
+    //園児の所有者の設定
+    setEdgeOwner();
 
-  //更新
-  void Update(){
-    if(keyPushJudge.GetJudge("d") == true){
-      if(debugFlag == true)
-        debugFlag = false;
-      else
-        debugFlag = true;
-    }
-  }
+    return "null";
+  };
+  public void OnEnter(){};
+  public void OnExit(){};
 
   //描画
-  void Render(){
+  public void Render(){
+    fill(50, 50, 50, 255);
+    text("DebugMode", 10, 40);
+
     //エッジの太描き
-    if(debugFlag == true){
-      map.Debug_Render();
-    }
+    fieldInfomation.Debug_Render();
+
+    //変数の表示
+    text("targetEdge:"+targetEdge, 50, 100);
+    text("targetHolder:"+targetHolder, 50, 150);
+
+    //選択しているエッジの強調描画
+    stroke( 200, 200, 200 );
+    strokeWeight( 10 );
+    fieldInfomation.drawEdge(targetEdge);
   }
+
+  //エッジの所有者の設定
+  public void setEdgeOwner(){
+    //右を押したらtargetEdgeを進めて、左を押したらtargetEdgeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで所有者の決定
+    if(keyPushJudge.GetJudge("RIGHT")){
+      if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
+      else targetEdge++;
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      if(targetEdge == 0)targetEdge=FieldInfomation.EdgeNum-1;
+      else targetEdge--;
+    }else if(keyPushJudge.GetJudge("UP")){
+      //プレイヤー人数+(未使用状態)だから+2する
+      if(targetHolder+2 == PLAYER_NUMBER)targetHolder = 0;
+      else targetHolder++;
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetEdge+10 > FieldInfomation.EdgeNum)targetEdge = 0;
+      else targetEdge+=10;
+    }else if(keyPushJudge.GetJudge("ENTER")){
+      fieldInfomation.SetEdgeOwner(targetEdge, targetHolder);
+    }
+
+  }
+
 }
 
+
+//↓不要
 //エッジとノードの所有者を設定するための関数が詰まったクラス
 class SetOwner{
   int EdgeNum = 72;//辺の数

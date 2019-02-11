@@ -2,15 +2,17 @@
 
 //メインステートマシン
 class MainStateMachine extends StateChanger{
-    String orderPlayer[] = new String[3];//プレイヤーのターン順序
+    String orderPlayer[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
     int whoseTurn = 0;//今誰のターンなのか管理する
+    boolean debugFlag = false;//デバッグモードONのフラグ
     //コンストラクタ
     public MainStateMachine(){
       super();
 
-      Add("player1",new PlayerStateMAchine( "player1"));
-      Add("player2",new PlayerStateMAchine( "player2"));
-      Add("player3",new PlayerStateMAchine( "player3"));
+      Add("player1",new PlayerStateMachine( "player1"));
+      Add("player2",new PlayerStateMachine( "player2"));
+      Add("player3",new PlayerStateMachine( "player3"));
+      Add("debug",new Debug());
       //プレイヤーのターン順序
       orderPlayer[0] = "player1";
       orderPlayer[1] = "player2";
@@ -21,21 +23,33 @@ class MainStateMachine extends StateChanger{
 
 
     public String Update(int elapsedTime){
-        String order = mCurrentState.Update(elapsedTime);
-
-        switch(order){
-          //次のプレイヤーにステートを移す
-          case "ChangePlayer":
-            if(whoseTurn+1 == orderPlayer.length){
-              whoseTurn = 0;
-            }else{
-              whoseTurn+=1;
-            }
-            Change(orderPlayer[whoseTurn]);
-            break;
+      //DebugModeのON,OFF
+      if(keyPushJudge.GetJudge("d")){
+        if(debugFlag){
+          debugFlag = false;
+          Change("player1");
         }
+        else{
+          debugFlag = true;
+          Change("debug");
+        }
+      }
 
-        return "null";
+      //子ステート(PlayerStateとdebug)の実行
+      String order = mCurrentState.Update(elapsedTime);
+      switch(order){
+        //次のプレイヤーにステートを移す
+        case "ChangePlayer":
+          if(whoseTurn+1 == orderPlayer.length){
+            whoseTurn = 0;
+          }else{
+            whoseTurn+=1;
+          }
+          Change(orderPlayer[whoseTurn]);
+          break;
+      }
+
+      return "null";
     }
 
     public void Render(){
@@ -80,14 +94,14 @@ public class StateChanger implements IState{
 
 //複数の子を管理するステートマシンのベースとなるクラス
 public class PlayerActionBase extends StateChanger{
-  PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
+  PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
   //コンストラクタ
-  public PlayerActionBase(PlayerStateMAchine tmp){
+  public PlayerActionBase(PlayerStateMachine tmp){
     super();
-    playerStateMachine = tmp;
+    PlayerStateMachine = tmp;
   }
 
-  public String playerStateMachineChildOFF(){
+  public String PlayerStateMachineChildOFF(){
     if(keyPushJudge.GetJudge("BACKSPACE") == true){
       return "ChildOFF";
     }

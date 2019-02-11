@@ -4,6 +4,8 @@ public static final int MOUSE_NOTCLICK = 2;
 public static final int TARGETKEY_PRESSED = 3;
 public static final int TARGETKEY_RELEASED = 4;
 
+//プレイヤーの人数
+public static final int PLAYER_NUMBER = 3;
 //エリアの一辺の長さ
 public static final int AREA_LENGTH = 100;
 //ホールドナンバーの半径

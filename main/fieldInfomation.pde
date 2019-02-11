@@ -1,10 +1,10 @@
 /* フィールドに関するクラスとか */
 
-//MAP(Map関数がすでにあるからMAPという表記)
-public class MAP{
-    int EdgeNum = 72;//辺の数
-    int NodeNum = 54;//ノードの数
-    int AreaNum = 19;//エリアの数
+//エッジ・ノード・エリアの情報を管理する
+public class FieldInfomation{
+    static final int EdgeNum = 72;//辺の数
+    static final int NodeNum = 54;//ノードの数
+    static final int AreaNum = 19;//エリアの数
 
     Edge[] edge = new Edge[EdgeNum];//辺
     Node[] node = new Node[NodeNum];//頂点
@@ -17,7 +17,7 @@ public class MAP{
 
 
     //コンストラクタ
-    public MAP(){
+    public FieldInfomation(){
       //辺と頂点とエリア
       for(int i=0;i<EdgeNum;i++)edge[i] = new Edge();
       for(int i=0;i<NodeNum;i++)node[i] = new Node();
@@ -239,41 +239,57 @@ public class MAP{
       popMatrix();
     }
     public void Debug_Render(){
+      strokeWeight( 5 );
+      int holder;
+      for(int i=0;i<EdgeNum;i++){
+        holder = edge[i].holder;
+        if(holder == 0)stroke( 0, 0, 20 );
+        else stroke( 255/PLAYER_NUMBER * holder, 250, 250 );
+        drawEdge(i);
+      }
+    }
+
+    //指定されたエッジ番号のエッジの描画
+    public void drawEdge(int edgeNumber){
       pushMatrix();
       translate(500, 300);
-      stroke( 100, 0, 0 );
-      strokeWeight( 3 );
-      for(int i=0;i<EdgeNum;i++){
-        float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
-        float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
-        float y1 = position_y[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
-        float y2 = position_y[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
-        line(x1,y1,x2,y2);
-      }
+      int i = edgeNumber;
+      float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+      float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+      float y1 = position_y[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+      float y2 = position_y[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+      line(x1,y1,x2,y2);
       popMatrix();
     }
+
     //エッジの所有者の設定
-    void SetEdgeOwner(){
+    void SetEdgeOwner(int edgeNumber, int holder){
+      edge[edgeNumber].SetHolder(holder);
     }
 
 }
 
 //フィールドのエッジクラス(道路を敷く所)
 class Edge{
-  int playerNumber = 0;//どのプレイヤーが保持している道路か.０なら未使用
+  int holder = 0;//どのプレイヤーが保持している道路か.０なら未使用
   List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
   List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
   List<Integer> nextNodeNumber = new ArrayList<Integer>();//隣り合ったノードの番号を格納する配列.長さは不定
 
   //道路を敷く.引数は取った人の識別番号
-  public void BuildRoad(int tmp_playerNumber){
-    if(playerNumber == 0){
-      playerNumber = tmp_playerNumber;
+  public void BuildRoad(int tmp_holder){
+    if(holder == 0){
+      holder = tmp_holder;
     }else{
       println("Edge -> ErrorBuildRoad");
     }
   }
 
+
+  //所有者を設定する
+  public void SetHolder(int tmp_holder){
+    holder = tmp_holder;
+  }
   //隣り合うエッジの番号を格納させる
   public void AddNextEdgeNumber(int Number){
     nextEdgeNumber.add(Number);
@@ -291,7 +307,7 @@ class Edge{
 
 //フィールドのノードクラス(都市を置く所)
 class Node{
-  int playerNumber = 0;//どのプレイヤーが保持している都市か.０なら未使用
+  int holder = 0;//どのプレイヤーが保持している都市か.０なら未使用
   int CityLevel = 0;//都市のレベル.0:未使用,1:都市レベル1,2:都市レベル2
   List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
   List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
@@ -299,9 +315,9 @@ class Node{
 
 
   //村を作る.引数は取った人の識別番号
-  public void BuildVillage(int tmp_playerNumber){
-    if(playerNumber == 0 && CityLevel == 0){
-      playerNumber = tmp_playerNumber;
+  public void BuildVillage(int tmp_holder){
+    if(holder == 0 && CityLevel == 0){
+      holder = tmp_holder;
       CityLevel++;
     }else{
       println("Node -> ErrorBuildCity");
@@ -310,7 +326,7 @@ class Node{
 
   //村を都市に発展させる.
   public void Develop(){
-    if(playerNumber != 0 && CityLevel == 1){
+    if(holder != 0 && CityLevel == 1){
       CityLevel++;
     }else{
       println("Node -> ErrorDevelop");
