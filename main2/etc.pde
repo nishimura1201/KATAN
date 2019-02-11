@@ -97,6 +97,7 @@ public class KeyPushJudge{
     else {println("keyJudgeError");return false;}
   }
 }
+
 void mousePressed() {
   mouseClickTorF = MOUSE_CLICK;
 }

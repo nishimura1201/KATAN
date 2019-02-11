@@ -8,9 +8,7 @@ import java.io.FileNotFoundException;
 int drawCount;//経過フレームを数える
 MainStateMachine mainStateMachine;
 KeyPushJudge keyPushJudge;
-SetOwner setOwner;
 MAP map;
-Debug debug;
 
 //画像
 HashMap<String, PImage> ImageList_Area;
@@ -38,11 +36,6 @@ void init(){
    mainStateMachine = new MainStateMachine();
    keyPushJudge = new KeyPushJudge();
    map = new MAP();
-   debug = new Debug();
-
-   //エッジとノードの所有者変更用クラス
-   setOwner = new SetOwner();
-
    //画像
    ImageList_Area = new HashMap<String, PImage>();
    ImageList_Number = new HashMap<String, PImage>();
@@ -71,7 +64,7 @@ void init(){
 
 
 void draw() {
-  fill(0, 0, 255);//HSB
+  fill(250, 0, 255, 255);
   rect(0, 0, width, height);
   keyPushJudge.Update();//キーが押されたかどうかの判定
 
@@ -79,10 +72,8 @@ void draw() {
   drawCount++;
 
   mainStateMachine.Update(drawCount);
-  debug.Update();
-
   mainStateMachine.Render();
+
   map.Render();
-  debug.Render();
-  //setOwner.Render();
+
 }
