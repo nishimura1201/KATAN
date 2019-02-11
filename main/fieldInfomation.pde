@@ -244,7 +244,7 @@ public class FieldInfomation{
       for(int i=0;i<EdgeNum;i++){
         holder = edge[i].holder;
         if(holder == 0)stroke( 0, 0, 20 );
-        stroke( 150/PLAYER_NUMBER * holder, 200, 200 );
+        else stroke( 150/PLAYER_NUMBER * holder, 200, 200 );
         drawEdge(i);
       }
     }

@@ -2,7 +2,6 @@ int mouseClickTorF = MOUSE_NOTCLICK;
 
 //キーが押された瞬間をとらえるためのクラス
 public class KeyPushJudge{
-  int keypushA = TARGETKEY_RELEASED;
   HashMap<String, Integer > keyList= new HashMap<String, Integer>();
   HashMap<String, Integer > keyListTrigger= new HashMap<String, Integer>();
 
@@ -13,6 +12,10 @@ public class KeyPushJudge{
     keyList.put("x", TARGETKEY_RELEASED);
     keyList.put("c", TARGETKEY_RELEASED);
     keyList.put("d", TARGETKEY_RELEASED);
+    keyList.put("RIGHT", TARGETKEY_RELEASED);
+    keyList.put("LEFT", TARGETKEY_RELEASED);
+    keyList.put("UP", TARGETKEY_RELEASED);
+    keyList.put("DOWN", TARGETKEY_RELEASED);
     keyList.put("ENTER", TARGETKEY_RELEASED);
     keyList.put("BACKSPACE", TARGETKEY_RELEASED);
 
@@ -21,6 +24,10 @@ public class KeyPushJudge{
     keyListTrigger.put("x", 0);
     keyListTrigger.put("c", 0);
     keyListTrigger.put("d", 0);
+    keyListTrigger.put("RIGHT", 0);
+    keyListTrigger.put("LEFT", 0);
+    keyListTrigger.put("UP", 0);
+    keyListTrigger.put("DOWN", 0);
     keyListTrigger.put("ENTER", 0);
     keyListTrigger.put("BACKSPACE", 0);
   }
@@ -34,6 +41,32 @@ public class KeyPushJudge{
 
     //PRESSED の判定
     if(keyPressed==true){
+      switch(keyCode){
+        case RIGHT:
+          if(keyListTrigger.get("RIGHT") == 0){
+            keyList.put("RIGHT", TARGETKEY_PRESSED);
+            keyListTrigger.put("RIGHT", 1);
+          }
+          break;
+        case LEFT:
+          if(keyListTrigger.get("LEFT") == 0){
+            keyList.put("LEFT", TARGETKEY_PRESSED);
+            keyListTrigger.put("LEFT", 1);
+          }
+          break;
+        case UP:
+          if(keyListTrigger.get("UP") == 0){
+            keyList.put("UP", TARGETKEY_PRESSED);
+            keyListTrigger.put("UP", 1);
+          }
+          break;
+        case DOWN:
+          if(keyListTrigger.get("DOWN") == 0){
+            keyList.put("DOWN", TARGETKEY_PRESSED);
+            keyListTrigger.put("DOWN", 1);
+          }
+          break;
+      }
       switch(key){
         case 'a':
           if(keyListTrigger.get("a") == 0){

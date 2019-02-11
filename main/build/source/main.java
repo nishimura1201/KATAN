@@ -28,9 +28,8 @@ public class main extends PApplet {
 int drawCount;//経過フレームを数える
 MainStateMachine mainStateMachine;
 KeyPushJudge keyPushJudge;
-SetOwner setOwner;
-MAP map;
-Debug debug;
+FieldInfomation fieldInfomation;
+
 
 //画像
 HashMap<String, PImage> ImageList_Area;
@@ -55,13 +54,10 @@ public void init(){
    imageMode(CENTER);
 
    drawCount = 0;//経過フレームを数える
+   fieldInfomation = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
    keyPushJudge = new KeyPushJudge();
-   map = new MAP();
-   debug = new Debug();
 
-   //エッジとノードの所有者変更用クラス
-   setOwner = new SetOwner();
 
    //画像
    ImageList_Area = new HashMap<String, PImage>();
@@ -92,33 +88,34 @@ public void init(){
 
 public void draw() {
   fill(0, 0, 255);//HSB
-  rect(0, 0, width, height);
+  rect(-10, -10, width+20, height+20);
   keyPushJudge.Update();//キーが押されたかどうかの判定
 
   //移行メイン処理
   drawCount++;
 
   mainStateMachine.Update(drawCount);
-  debug.Update();
 
+  fieldInfomation.Render();
   mainStateMachine.Render();
-  map.Render();
-  debug.Render();
-  //setOwner.Render();
+
+
 }
 //メインのステートマシンやインタフェイスについて記述
 
 //メインステートマシン
 class MainStateMachine extends StateChanger{
-    String orderPlayer[] = new String[3];//プレイヤーのターン順序
+    String orderPlayer[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
     int whoseTurn = 0;//今誰のターンなのか管理する
+    boolean debugFlag = false;//デバッグモードONのフラグ
     //コンストラクタ
     public MainStateMachine(){
       super();
 
-      Add("player1",new PlayerStateMAchine( "player1"));
-      Add("player2",new PlayerStateMAchine( "player2"));
-      Add("player3",new PlayerStateMAchine( "player3"));
+      Add("player1",new PlayerStateMachine( "player1"));
+      Add("player2",new PlayerStateMachine( "player2"));
+      Add("player3",new PlayerStateMachine( "player3"));
+      Add("debug",new Debug());
       //プレイヤーのターン順序
       orderPlayer[0] = "player1";
       orderPlayer[1] = "player2";
@@ -129,21 +126,33 @@ class MainStateMachine extends StateChanger{
 
 
     public String Update(int elapsedTime){
-        String order = mCurrentState.Update(elapsedTime);
-
-        switch(order){
-          //次のプレイヤーにステートを移す
-          case "ChangePlayer":
-            if(whoseTurn+1 == orderPlayer.length){
-              whoseTurn = 0;
-            }else{
-              whoseTurn+=1;
-            }
-            Change(orderPlayer[whoseTurn]);
-            break;
+      //DebugModeのON,OFF
+      if(keyPushJudge.GetJudge("d")){
+        if(debugFlag){
+          debugFlag = false;
+          Change("player1");
         }
+        else{
+          debugFlag = true;
+          Change("debug");
+        }
+      }
 
-        return "null";
+      //子ステート(PlayerStateとdebug)の実行
+      String order = mCurrentState.Update(elapsedTime);
+      switch(order){
+        //次のプレイヤーにステートを移す
+        case "ChangePlayer":
+          if(whoseTurn+1 == orderPlayer.length){
+            whoseTurn = 0;
+          }else{
+            whoseTurn+=1;
+          }
+          Change(orderPlayer[whoseTurn]);
+          break;
+      }
+
+      return "null";
     }
 
     public void Render(){
@@ -188,14 +197,14 @@ public class StateChanger implements IState{
 
 //複数の子を管理するステートマシンのベースとなるクラス
 public class PlayerActionBase extends StateChanger{
-  PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
+  PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
   //コンストラクタ
-  public PlayerActionBase(PlayerStateMAchine tmp){
+  public PlayerActionBase(PlayerStateMachine tmp){
     super();
-    playerStateMachine = tmp;
+    PlayerStateMachine = tmp;
   }
 
-  public String playerStateMachineChildOFF(){
+  public String PlayerStateMachineChildOFF(){
     if(keyPushJudge.GetJudge("BACKSPACE") == true){
       return "ChildOFF";
     }
@@ -224,6 +233,8 @@ public static final int MOUSE_NOTCLICK = 2;
 public static final int TARGETKEY_PRESSED = 3;
 public static final int TARGETKEY_RELEASED = 4;
 
+//プレイヤーの人数
+public static final int PLAYER_NUMBER = 3;
 //エリアの一辺の長さ
 public static final int AREA_LENGTH = 100;
 //ホールドナンバーの半径
@@ -259,13 +270,13 @@ enum PlayerSelectable{
 //プレイヤーのステートマシンなどについて記述
 
 //プレイヤーのアクションを管理するステートマシン
-class PlayerStateMAchine extends StateChanger{
+class PlayerStateMachine extends StateChanger{
   int listIndex = 0;//どの子を選択しようとしているのかというindex
   String MyName;//自分の名前
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
-  public PlayerStateMAchine(String tmp_MyName){
+  public PlayerStateMachine(String tmp_MyName){
 
     MyName = tmp_MyName;
 
@@ -340,13 +351,13 @@ class PlayerStateMAchine extends StateChanger{
 //サイコロを振る
 class Dice extends PlayerActionBase{
   //コンストラクタ
-  public Dice(PlayerStateMAchine tmp){
+  public Dice(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
 
   public String Update(int elapsedTime){
-    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -358,12 +369,11 @@ class Dice extends PlayerActionBase{
 
 //カードを選択する
 class ChoiceCard extends PlayerActionBase{
-  //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
   List<String> cardList;
   int cardIndex = 0;//カード選択のためのindex
 
   //コンストラクタ
-  public ChoiceCard(PlayerStateMAchine tmp){
+  public ChoiceCard(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
@@ -374,7 +384,7 @@ class ChoiceCard extends PlayerActionBase{
   };
 
   public String Update(int elapsedTime){
-    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -385,23 +395,23 @@ class ChoiceCard extends PlayerActionBase{
   };
   public void OnEnter(){
     //プレイヤーの所持しているカードを取得
-    cardList = playerStateMachine.GetCardList();
+    cardList = PlayerStateMachine.GetCardList();
   };
   public void OnExit(){};
 }
 
 //他プレイヤーとの交易
 class TradeWithOther extends PlayerActionBase{
-  //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
+  //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public TradeWithOther(PlayerStateMAchine tmp){
+  public TradeWithOther(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
 
   public String Update(int elapsedTime){
-    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
 
   };
   public void Render(){
@@ -415,16 +425,16 @@ class TradeWithOther extends PlayerActionBase{
 
 //カードの使用
 class UseCard extends PlayerActionBase{
-  //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
+  //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public UseCard(PlayerStateMAchine tmp){
+  public UseCard(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
 
   public String Update(int elapsedTime){
-    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
   };
   public void Render(){
     fill(50, 50, 50, 255);
@@ -437,16 +447,16 @@ class UseCard extends PlayerActionBase{
 
 //開発
 class Development extends PlayerActionBase{
-  //PlayerStateMAchine playerStateMachine;//プレイヤーステートマシン（親の参照）
+  //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
-  public Development(PlayerStateMAchine tmp){
+  public Development(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
 
   public String Update(int elapsedTime){
-    return playerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
 
   };
   public void Render(){
@@ -458,33 +468,85 @@ class Development extends PlayerActionBase{
   public void OnExit(){};
 }
 //デバッグモード
-class Debug{
-  boolean debugFlag = false;
-
+class Debug implements IState{
+  int targetEdge = 0;//所有者を変更しようとするエッジの番号
+  int targetHolder = 0;//設定しようとするプレイヤー番号,0なら未使用
   //コンストラクタ
   Debug(){
+    //エッジの初期設定
+    fieldInfomation.SetEdgeOwner(0, 1);
+    fieldInfomation.SetEdgeOwner(1, 1);
+    fieldInfomation.SetEdgeOwner(2, 1);
+    fieldInfomation.SetEdgeOwner(3, 1);
+    fieldInfomation.SetEdgeOwner(4, 1);
+    fieldInfomation.SetEdgeOwner(5, 1);
+
+    fieldInfomation.SetEdgeOwner(6, 2);
+    fieldInfomation.SetEdgeOwner(10, 2);
+    fieldInfomation.SetEdgeOwner(11, 2);
+    fieldInfomation.SetEdgeOwner(12, 2);
+    fieldInfomation.SetEdgeOwner(13, 2);
+    fieldInfomation.SetEdgeOwner(14, 2);
+    fieldInfomation.SetEdgeOwner(15, 2);
+
   }
 
+  public String Update(int elapsedTime){
+    //園児の所有者の設定
+    setEdgeOwner();
 
-  //更新
-  public void Update(){
-    if(keyPushJudge.GetJudge("d") == true){
-      if(debugFlag == true)
-        debugFlag = false;
-      else
-        debugFlag = true;
-    }
-  }
+    return "null";
+  };
+  public void OnEnter(){};
+  public void OnExit(){};
 
   //描画
   public void Render(){
+    fill(50, 50, 50, 255);
+    text("DebugMode", 10, 40);
+
     //エッジの太描き
-    if(debugFlag == true){
-      map.Debug_Render();
-    }
+    fieldInfomation.Debug_Render();
+
+    //変数の表示
+    text("targetEdge:"+targetEdge, 50, 100);
+    text("targetHolder:"+targetHolder, 50, 150);
+
+    //選択しているエッジの強調描画
+    stroke( 200, 200, 200 );
+    strokeWeight( 10 );
+    fieldInfomation.drawEdge(targetEdge);
   }
+
+  //エッジの所有者の設定
+  public void setEdgeOwner(){
+    //右を押したらtargetEdgeを進めて、左を押したらtargetEdgeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで所有者の決定
+    if(keyPushJudge.GetJudge("RIGHT")){
+      if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
+      else targetEdge++;
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      if(targetEdge == 0)targetEdge=FieldInfomation.EdgeNum-1;
+      else targetEdge--;
+    }else if(keyPushJudge.GetJudge("UP")){
+      //プレイヤー人数+(未使用状態)だから+2する
+      if(targetHolder+2 == PLAYER_NUMBER)targetHolder = 0;
+      else targetHolder++;
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetEdge+10 > FieldInfomation.EdgeNum)targetEdge = 0;
+      else targetEdge+=10;
+    }else if(keyPushJudge.GetJudge("ENTER")){
+      fieldInfomation.SetEdgeOwner(targetEdge, targetHolder);
+    }
+
+  }
+
 }
 
+
+//↓不要
 //エッジとノードの所有者を設定するための関数が詰まったクラス
 class SetOwner{
   int EdgeNum = 72;//辺の数
@@ -566,7 +628,6 @@ int mouseClickTorF = MOUSE_NOTCLICK;
 
 //キーが押された瞬間をとらえるためのクラス
 public class KeyPushJudge{
-  int keypushA = TARGETKEY_RELEASED;
   HashMap<String, Integer > keyList= new HashMap<String, Integer>();
   HashMap<String, Integer > keyListTrigger= new HashMap<String, Integer>();
 
@@ -577,6 +638,10 @@ public class KeyPushJudge{
     keyList.put("x", TARGETKEY_RELEASED);
     keyList.put("c", TARGETKEY_RELEASED);
     keyList.put("d", TARGETKEY_RELEASED);
+    keyList.put("RIGHT", TARGETKEY_RELEASED);
+    keyList.put("LEFT", TARGETKEY_RELEASED);
+    keyList.put("UP", TARGETKEY_RELEASED);
+    keyList.put("DOWN", TARGETKEY_RELEASED);
     keyList.put("ENTER", TARGETKEY_RELEASED);
     keyList.put("BACKSPACE", TARGETKEY_RELEASED);
 
@@ -585,6 +650,10 @@ public class KeyPushJudge{
     keyListTrigger.put("x", 0);
     keyListTrigger.put("c", 0);
     keyListTrigger.put("d", 0);
+    keyListTrigger.put("RIGHT", 0);
+    keyListTrigger.put("LEFT", 0);
+    keyListTrigger.put("UP", 0);
+    keyListTrigger.put("DOWN", 0);
     keyListTrigger.put("ENTER", 0);
     keyListTrigger.put("BACKSPACE", 0);
   }
@@ -598,6 +667,32 @@ public class KeyPushJudge{
 
     //PRESSED の判定
     if(keyPressed==true){
+      switch(keyCode){
+        case RIGHT:
+          if(keyListTrigger.get("RIGHT") == 0){
+            keyList.put("RIGHT", TARGETKEY_PRESSED);
+            keyListTrigger.put("RIGHT", 1);
+          }
+          break;
+        case LEFT:
+          if(keyListTrigger.get("LEFT") == 0){
+            keyList.put("LEFT", TARGETKEY_PRESSED);
+            keyListTrigger.put("LEFT", 1);
+          }
+          break;
+        case UP:
+          if(keyListTrigger.get("UP") == 0){
+            keyList.put("UP", TARGETKEY_PRESSED);
+            keyListTrigger.put("UP", 1);
+          }
+          break;
+        case DOWN:
+          if(keyListTrigger.get("DOWN") == 0){
+            keyList.put("DOWN", TARGETKEY_PRESSED);
+            keyListTrigger.put("DOWN", 1);
+          }
+          break;
+      }
       switch(key){
         case 'a':
           if(keyListTrigger.get("a") == 0){
@@ -666,11 +761,11 @@ public void mousePressed() {
 }
 /* フィールドに関するクラスとか */
 
-//MAP(Map関数がすでにあるからMAPという表記)
-public class MAP{
-    int EdgeNum = 72;//辺の数
-    int NodeNum = 54;//ノードの数
-    int AreaNum = 19;//エリアの数
+//エッジ・ノード・エリアの情報を管理する
+public class FieldInfomation{
+    static final int EdgeNum = 72;//辺の数
+    static final int NodeNum = 54;//ノードの数
+    static final int AreaNum = 19;//エリアの数
 
     Edge[] edge = new Edge[EdgeNum];//辺
     Node[] node = new Node[NodeNum];//頂点
@@ -683,7 +778,7 @@ public class MAP{
 
 
     //コンストラクタ
-    public MAP(){
+    public FieldInfomation(){
       //辺と頂点とエリア
       for(int i=0;i<EdgeNum;i++)edge[i] = new Edge();
       for(int i=0;i<NodeNum;i++)node[i] = new Node();
@@ -905,41 +1000,57 @@ public class MAP{
       popMatrix();
     }
     public void Debug_Render(){
+      strokeWeight( 5 );
+      int holder;
+      for(int i=0;i<EdgeNum;i++){
+        holder = edge[i].holder;
+        if(holder == 0)stroke( 0, 0, 20 );
+        else stroke( 150/PLAYER_NUMBER * holder, 200, 200 );
+        drawEdge(i);
+      }
+    }
+
+    //指定されたエッジ番号のエッジの描画
+    public void drawEdge(int edgeNumber){
       pushMatrix();
       translate(500, 300);
-      stroke( 100, 0, 0 );
-      strokeWeight( 3 );
-      for(int i=0;i<EdgeNum;i++){
-        float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
-        float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
-        float y1 = position_y[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
-        float y2 = position_y[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
-        line(x1,y1,x2,y2);
-      }
+      int i = edgeNumber;
+      float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+      float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+      float y1 = position_y[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
+      float y2 = position_y[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
+      line(x1,y1,x2,y2);
       popMatrix();
     }
+
     //エッジの所有者の設定
-    public void SetEdgeOwner(){
+    public void SetEdgeOwner(int edgeNumber, int holder){
+      edge[edgeNumber].SetHolder(holder);
     }
 
 }
 
 //フィールドのエッジクラス(道路を敷く所)
 class Edge{
-  int playerNumber = 0;//どのプレイヤーが保持している道路か.０なら未使用
+  int holder = 0;//どのプレイヤーが保持している道路か.０なら未使用
   List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
   List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
   List<Integer> nextNodeNumber = new ArrayList<Integer>();//隣り合ったノードの番号を格納する配列.長さは不定
 
   //道路を敷く.引数は取った人の識別番号
-  public void BuildRoad(int tmp_playerNumber){
-    if(playerNumber == 0){
-      playerNumber = tmp_playerNumber;
+  public void BuildRoad(int tmp_holder){
+    if(holder == 0){
+      holder = tmp_holder;
     }else{
       println("Edge -> ErrorBuildRoad");
     }
   }
 
+
+  //所有者を設定する
+  public void SetHolder(int tmp_holder){
+    holder = tmp_holder;
+  }
   //隣り合うエッジの番号を格納させる
   public void AddNextEdgeNumber(int Number){
     nextEdgeNumber.add(Number);
@@ -957,7 +1068,7 @@ class Edge{
 
 //フィールドのノードクラス(都市を置く所)
 class Node{
-  int playerNumber = 0;//どのプレイヤーが保持している都市か.０なら未使用
+  int holder = 0;//どのプレイヤーが保持している都市か.０なら未使用
   int CityLevel = 0;//都市のレベル.0:未使用,1:都市レベル1,2:都市レベル2
   List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
   List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
@@ -965,9 +1076,9 @@ class Node{
 
 
   //村を作る.引数は取った人の識別番号
-  public void BuildVillage(int tmp_playerNumber){
-    if(playerNumber == 0 && CityLevel == 0){
-      playerNumber = tmp_playerNumber;
+  public void BuildVillage(int tmp_holder){
+    if(holder == 0 && CityLevel == 0){
+      holder = tmp_holder;
       CityLevel++;
     }else{
       println("Node -> ErrorBuildCity");
@@ -976,7 +1087,7 @@ class Node{
 
   //村を都市に発展させる.
   public void Develop(){
-    if(playerNumber != 0 && CityLevel == 1){
+    if(holder != 0 && CityLevel == 1){
       CityLevel++;
     }else{
       println("Node -> ErrorDevelop");

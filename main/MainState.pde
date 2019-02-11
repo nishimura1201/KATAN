@@ -2,8 +2,9 @@
 
 //メインステートマシン
 class MainStateMachine extends StateChanger{
-    String orderPlayer[] = new String[3];//プレイヤーのターン順序
+    String orderPlayer[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
     int whoseTurn = 0;//今誰のターンなのか管理する
+    boolean debugFlag = false;//デバッグモードONのフラグ
     //コンストラクタ
     public MainStateMachine(){
       super();
@@ -11,7 +12,7 @@ class MainStateMachine extends StateChanger{
       Add("player1",new PlayerStateMachine( "player1"));
       Add("player2",new PlayerStateMachine( "player2"));
       Add("player3",new PlayerStateMachine( "player3"));
-      Add("debug",new Debug();
+      Add("debug",new Debug());
       //プレイヤーのターン順序
       orderPlayer[0] = "player1";
       orderPlayer[1] = "player2";
@@ -22,21 +23,33 @@ class MainStateMachine extends StateChanger{
 
 
     public String Update(int elapsedTime){
-        String order = mCurrentState.Update(elapsedTime);
-
-        switch(order){
-          //次のプレイヤーにステートを移す
-          case "ChangePlayer":
-            if(whoseTurn+1 == orderPlayer.length){
-              whoseTurn = 0;
-            }else{
-              whoseTurn+=1;
-            }
-            Change(orderPlayer[whoseTurn]);
-            break;
+      //DebugModeのON,OFF
+      if(keyPushJudge.GetJudge("d")){
+        if(debugFlag){
+          debugFlag = false;
+          Change("player1");
         }
+        else{
+          debugFlag = true;
+          Change("debug");
+        }
+      }
 
-        return "null";
+      //子ステート(PlayerStateとdebug)の実行
+      String order = mCurrentState.Update(elapsedTime);
+      switch(order){
+        //次のプレイヤーにステートを移す
+        case "ChangePlayer":
+          if(whoseTurn+1 == orderPlayer.length){
+            whoseTurn = 0;
+          }else{
+            whoseTurn+=1;
+          }
+          Change(orderPlayer[whoseTurn]);
+          break;
+      }
+
+      return "null";
     }
 
     public void Render(){
