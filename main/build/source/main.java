@@ -531,8 +531,8 @@ class Debug implements IState{
       if(targetEdge == 0)targetEdge=FieldInfomation.EdgeNum-1;
       else targetEdge--;
     }else if(keyPushJudge.GetJudge("UP")){
-      //プレイヤー人数+(未使用状態)だから+2する
-      if(targetHolder+2 == PLAYER_NUMBER)targetHolder = 0;
+      //プレイヤー人数+(未使用状態)だから+1する
+      if(targetHolder+1 == PLAYER_NUMBER+1)targetHolder = 0;
       else targetHolder++;
     }else if(keyPushJudge.GetJudge("DOWN")){
       if(targetEdge+10 > FieldInfomation.EdgeNum)targetEdge = 0;
