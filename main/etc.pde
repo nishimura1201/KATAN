@@ -12,6 +12,8 @@ public class KeyPushJudge{
     keyList.put("x", TARGETKEY_RELEASED);
     keyList.put("c", TARGETKEY_RELEASED);
     keyList.put("d", TARGETKEY_RELEASED);
+    keyList.put("l", TARGETKEY_RELEASED);
+    keyList.put("s", TARGETKEY_RELEASED);
     keyList.put("RIGHT", TARGETKEY_RELEASED);
     keyList.put("LEFT", TARGETKEY_RELEASED);
     keyList.put("UP", TARGETKEY_RELEASED);
@@ -24,6 +26,8 @@ public class KeyPushJudge{
     keyListTrigger.put("x", 0);
     keyListTrigger.put("c", 0);
     keyListTrigger.put("d", 0);
+    keyListTrigger.put("l", 0);
+    keyListTrigger.put("s", 0);
     keyListTrigger.put("RIGHT", 0);
     keyListTrigger.put("LEFT", 0);
     keyListTrigger.put("UP", 0);
@@ -40,6 +44,7 @@ public class KeyPushJudge{
     }
 
     //PRESSED の判定
+    //_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     if(keyPressed==true){
       switch(keyCode){
         case RIGHT:
@@ -67,6 +72,8 @@ public class KeyPushJudge{
           }
           break;
       }
+
+      //_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
       switch(key){
         case 'a':
           if(keyListTrigger.get("a") == 0){
@@ -96,6 +103,18 @@ public class KeyPushJudge{
           if(keyListTrigger.get("d") == 0){
             keyList.put("d", TARGETKEY_PRESSED);
             keyListTrigger.put("d", 1);
+          }
+          break;
+        case 'l':
+          if(keyListTrigger.get("l") == 0){
+            keyList.put("l", TARGETKEY_PRESSED);
+            keyListTrigger.put("l", 1);
+          }
+          break;
+        case 's':
+          if(keyListTrigger.get("s") == 0){
+            keyList.put("s", TARGETKEY_PRESSED);
+            keyListTrigger.put("s", 1);
           }
           break;
         case ENTER:

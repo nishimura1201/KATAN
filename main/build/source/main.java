@@ -34,6 +34,9 @@ FieldInfomation fieldInfomation;
 //画像
 HashMap<String, PImage> ImageList_Area;
 HashMap<String, PImage> ImageList_Number;
+HashMap<String, PImage> ImageList_City1;
+HashMap<String, PImage> ImageList_City2;
+PImage Image_nonCity;
 
 public void setup() {
 
@@ -62,7 +65,8 @@ public void init(){
    //画像
    ImageList_Area = new HashMap<String, PImage>();
    ImageList_Number = new HashMap<String, PImage>();
-
+   ImageList_City1 = new HashMap<String, PImage>();
+   ImageList_City2 = new HashMap<String, PImage>();
 
   //画像読み込み
   ImageList_Area.put("Desert"   ,loadImage("img/area/Desert.png"));
@@ -72,17 +76,26 @@ public void init(){
   ImageList_Area.put("Pasture"  ,loadImage("img/area/Pasture.png"));
   ImageList_Area.put("Hills"    ,loadImage("img/area/Hills.png"));
 
-  ImageList_Number.put("2"   ,loadImage("img/Number/2.png"));
-  ImageList_Number.put("3"   ,loadImage("img/Number/3.png"));
-  ImageList_Number.put("4"   ,loadImage("img/Number/4.png"));
-  ImageList_Number.put("5"   ,loadImage("img/Number/5.png"));
-  ImageList_Number.put("6"   ,loadImage("img/Number/6.png"));
-  ImageList_Number.put("8"   ,loadImage("img/Number/8.png"));
-  ImageList_Number.put("9"   ,loadImage("img/Number/9.png"));
-  ImageList_Number.put("10"  ,loadImage("img/Number/10.png"));
-  ImageList_Number.put("11"  ,loadImage("img/Number/11.png"));
-  ImageList_Number.put("12"  ,loadImage("img/Number/12.png"));
+  ImageList_Number.put("2"   ,loadImage("img/number/2.png"));
+  ImageList_Number.put("3"   ,loadImage("img/number/3.png"));
+  ImageList_Number.put("4"   ,loadImage("img/number/4.png"));
+  ImageList_Number.put("5"   ,loadImage("img/number/5.png"));
+  ImageList_Number.put("6"   ,loadImage("img/number/6.png"));
+  ImageList_Number.put("8"   ,loadImage("img/number/8.png"));
+  ImageList_Number.put("9"   ,loadImage("img/number/9.png"));
+  ImageList_Number.put("10"  ,loadImage("img/number/10.png"));
+  ImageList_Number.put("11"  ,loadImage("img/number/11.png"));
+  ImageList_Number.put("12"  ,loadImage("img/number/12.png"));
 
+  ImageList_City1.put("1"   ,loadImage("img/city/city1_1.png"));
+  ImageList_City1.put("2"   ,loadImage("img/city/city1_2.png"));
+  ImageList_City1.put("3"   ,loadImage("img/city/city1_3.png"));
+
+  ImageList_City2.put("1"   ,loadImage("img/city/city2_1.png"));
+  ImageList_City2.put("2"   ,loadImage("img/city/city2_2.png"));
+  ImageList_City2.put("3"   ,loadImage("img/city/city2_3.png"));
+
+  Image_nonCity = loadImage("img/city/nonCity.png");
 }
 
 
@@ -237,6 +250,8 @@ public static final int TARGETKEY_RELEASED = 4;
 public static final int PLAYER_NUMBER = 3;
 //エリアの一辺の長さ
 public static final int AREA_LENGTH = 100;
+//都市描画の一辺の長さ
+public static final int CITY_LENGTH = 50;
 //ホールドナンバーの半径
 public static final int AREA_HOLDNUMBER_LENGTH = 40;
 
@@ -470,7 +485,11 @@ class Development extends PlayerActionBase{
 //デバッグモード
 class Debug implements IState{
   int targetEdge = 0;//所有者を変更しようとするエッジの番号
+  int targetNode = 0;//所有者を変更しようとするエッジの番号
   int targetHolder = 0;//設定しようとするプレイヤー番号,0なら未使用
+  int targetCityLevel = 0;//設定しようとする都市のレベル
+  int whichSetting = 0;//設定しようとしているのはどの要素か(0..エッジ,1..ノード)
+  int kindOfSetting = 2;//設定できる要素の数
   //コンストラクタ
   Debug(){
     //エッジの初期設定
@@ -492,8 +511,18 @@ class Debug implements IState{
   }
 
   public String Update(int elapsedTime){
-    //園児の所有者の設定
-    setEdgeOwner();
+    //設定する要素の選択
+    if(keyPushJudge.GetJudge("s")){
+      if(whichSetting == kindOfSetting-1)whichSetting = 0;
+      else whichSetting++;
+    }
+
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:setEdgeOwner();break;
+      //ノードの所有者の設定
+      case 1:setNodeOwner();break;
+    }
 
     return "null";
   };
@@ -503,19 +532,56 @@ class Debug implements IState{
   //描画
   public void Render(){
     fill(50, 50, 50, 255);
+    textSize(20);
     text("DebugMode", 10, 40);
-
+    switch(whichSetting){
+      case 0:text("Edge", 150, 40);break;
+      case 1:text("Node", 150, 40);break;
+    }
     //エッジの太描き
     fieldInfomation.Debug_Render();
 
-    //変数の表示
-    text("targetEdge:"+targetEdge, 50, 100);
-    text("targetHolder:"+targetHolder, 50, 150);
 
-    //選択しているエッジの強調描画
-    stroke( 200, 200, 200 );
-    strokeWeight( 10 );
-    fieldInfomation.drawEdge(targetEdge);
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:
+        //変数の表示
+        text("targetEdge:"+targetEdge, 50, 100);
+        text("targetHolder:"+targetHolder, 50, 150);
+        //選択しているエッジの強調描画
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(500, 300);
+        fieldInfomation.drawEdge(targetEdge);
+        popMatrix();
+        break;
+
+      //ノードの所有者の設定
+      case 1:
+        //変数の表示
+        text("targetNode:"+targetNode, 50, 100);
+        text("targetHolder:"+targetHolder, 50, 150);
+        text("targetCityLevel:"+targetCityLevel, 50, 200);
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(500, 300);
+        fieldInfomation.drawNode(targetNode);
+        popMatrix();
+        break;
+    }
+
+    //説明書き
+    textSize(15);
+    fill(0, 0, 0);//HSB
+    text("s:Change element of setting", 10, 300);
+    text("RIGHT:targetEdge+=1", 10, 320);
+    text("LEFT:targetEdge-=1", 10, 340);
+    text("UP:targetHolder+=1", 10, 360);
+    text("DOWN:targetEdge(Node)+=10", 10, 380);
+    text("l:cityLevel+=1(Node only)", 10, 400);
+
   }
 
   //エッジの所有者の設定
@@ -540,88 +606,34 @@ class Debug implements IState{
     }else if(keyPushJudge.GetJudge("ENTER")){
       fieldInfomation.SetEdgeOwner(targetEdge, targetHolder);
     }
-
   }
 
-}
-
-
-//↓不要
-//エッジとノードの所有者を設定するための関数が詰まったクラス
-class SetOwner{
-  int EdgeNum = 72;//辺の数
-  int NodeNum = 54;//ノードの数
-
-  int edgeHolder[] = new int[EdgeNum];//エッジの所持者を格納する
-  int nodeHolder[] = new int[NodeNum];//ノードの所持者を格納する
-  float position_x[] = new float[NodeNum];//描画する頂点位置のx座標
-  float position_y[] = new float[NodeNum];//描画する頂点位置のy座標
-  int edgeNextNode1[] = new int[EdgeNum];//エッジの端のノード番号1
-  int edgeNextNode2[] = new int[EdgeNum];//エッジの端のノード番号2
-
-
-  //コンストラクタ
-  SetOwner(){
-    //初期化
-    for(int i=0;i<EdgeNum;i++){
-      edgeHolder[i] = 0;
+  //ノードの所有者の設定
+  public void setNodeOwner(){
+    //右を押したらtargetNodeを進めて、左を押したらtargetNodeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで所有者とレベルの決定
+    if(keyPushJudge.GetJudge("RIGHT")){
+      if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
+      else targetNode++;
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      if(targetNode == 0)targetNode=FieldInfomation.NodeNum-1;
+      else targetNode--;
+    }else if(keyPushJudge.GetJudge("UP")){
+      //プレイヤー人数+(未使用状態)だから+1する
+      if(targetHolder+1 == PLAYER_NUMBER+1)targetHolder = 0;
+      else targetHolder++;
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetNode+10 > FieldInfomation.NodeNum)targetNode = 0;
+      else targetNode+=10;
+    }else if(keyPushJudge.GetJudge("l")){
+      if(targetCityLevel == 2)targetCityLevel = 0;
+      else targetCityLevel++;
     }
-    for(int i=0;i<NodeNum;i++){
-      nodeHolder[i] = 0;
+    else if(keyPushJudge.GetJudge("ENTER")){
+      fieldInfomation.SetNodeOwner(targetNode, targetHolder, targetCityLevel);
     }
-
-    //ノードの描画座標の位置を格納
-    {
-      String lines[] = loadStrings("data/NodeDrawPosition.csv");
-      String lin;
-      String [] splited;
-      for(int i=1;i<NodeNum+1;i++){//1行目はラベル
-        lin = lines[i];
-        splited = split(lin,',');
-        position_x[i-1] = PApplet.parseFloat(splited[1]);//x座標
-        position_y[i-1] = PApplet.parseFloat(splited[2])/4;//y座標
-      }
-    }
-
-    //エッジの端にあるノードの番号を格納
-    {
-      String lines[] = loadStrings("data/EdgeNextNode.csv");
-      String lin;
-      String [] splited;
-      for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-        lin = lines[i];
-        splited = split(lin,',');
-        edgeNextNode1[i-1] = PApplet.parseInt(splited[1]);
-        edgeNextNode2[i-1] = PApplet.parseInt(splited[2]);
-      }
-    }
-
-  }
-
-  //エッジの所有者の設定
-  public void SetEdgeOwner(){
-
-  }
-
-  //更新
-  public void Update(){
-
-  }
-
-  //描画
-  public void Render(){
-    pushMatrix();
-    translate(500, 300);
-    stroke( 100, 0, 0 );
-    strokeWeight( 3 );
-    for(int i=0;i<EdgeNum;i++){
-      float x1 = position_x[ edgeNextNode1[i] ] * AREA_LENGTH;
-      float x2 = position_x[ edgeNextNode2[i] ] * AREA_LENGTH;
-      float y1 = position_y[ edgeNextNode1[i] ] * AREA_LENGTH;
-      float y2 = position_y[ edgeNextNode2[i] ] * AREA_LENGTH;
-      line(x1,y1,x2,y2);
-    }
-    popMatrix();
   }
 }
 int mouseClickTorF = MOUSE_NOTCLICK;
@@ -638,6 +650,8 @@ public class KeyPushJudge{
     keyList.put("x", TARGETKEY_RELEASED);
     keyList.put("c", TARGETKEY_RELEASED);
     keyList.put("d", TARGETKEY_RELEASED);
+    keyList.put("l", TARGETKEY_RELEASED);
+    keyList.put("s", TARGETKEY_RELEASED);
     keyList.put("RIGHT", TARGETKEY_RELEASED);
     keyList.put("LEFT", TARGETKEY_RELEASED);
     keyList.put("UP", TARGETKEY_RELEASED);
@@ -650,6 +664,8 @@ public class KeyPushJudge{
     keyListTrigger.put("x", 0);
     keyListTrigger.put("c", 0);
     keyListTrigger.put("d", 0);
+    keyListTrigger.put("l", 0);
+    keyListTrigger.put("s", 0);
     keyListTrigger.put("RIGHT", 0);
     keyListTrigger.put("LEFT", 0);
     keyListTrigger.put("UP", 0);
@@ -666,6 +682,7 @@ public class KeyPushJudge{
     }
 
     //PRESSED の判定
+    //_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     if(keyPressed==true){
       switch(keyCode){
         case RIGHT:
@@ -693,6 +710,8 @@ public class KeyPushJudge{
           }
           break;
       }
+
+      //_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
       switch(key){
         case 'a':
           if(keyListTrigger.get("a") == 0){
@@ -722,6 +741,18 @@ public class KeyPushJudge{
           if(keyListTrigger.get("d") == 0){
             keyList.put("d", TARGETKEY_PRESSED);
             keyListTrigger.put("d", 1);
+          }
+          break;
+        case 'l':
+          if(keyListTrigger.get("l") == 0){
+            keyList.put("l", TARGETKEY_PRESSED);
+            keyListTrigger.put("l", 1);
+          }
+          break;
+        case 's':
+          if(keyListTrigger.get("s") == 0){
+            keyList.put("s", TARGETKEY_PRESSED);
+            keyListTrigger.put("s", 1);
           }
           break;
         case ENTER:
@@ -980,40 +1011,53 @@ public class FieldInfomation{
     public void Render(){
       pushMatrix();
       translate(500, 300);
+      float x,y;
+      int holder, cityLevel;
 
       //エリアの描画
-      float x,y;
       for(int i=0;i<AreaNum;i++){
         x = area[i].positionX * AREA_LENGTH;
         y = area[i].positionY * AREA_LENGTH * 3/4;
         pushMatrix();
         translate(x, y);
-        {
-          DrawArea(area[i].areaType);
+        DrawArea(area[i].areaType);
+        DrawAreaHoldNumber(area[i].holdNumber);
+        popMatrix();
+      }
 
-          //ellipse(0,0,AREA_LENGTH*1.2,AREA_LENGTH*1.2);
-          DrawAreaHoldNumber(area[i].holdNumber);
-        }
+      //エッジの所有者を表示
+      strokeWeight( 5 );
+      for(int i=0;i<EdgeNum;i++){
+        holder = edge[i].holder;
+        if(holder == 0)stroke( 0, 0, 20 );
+        else stroke( 150/PLAYER_NUMBER * holder+50, 200, 200 );
+        drawEdge(i);
+      }
+
+      //都市の描画
+      for(int i=0;i<NodeNum;i++){
+        x = position_x[i] * AREA_LENGTH;
+        y = position_y[i] * AREA_LENGTH;
+
+        holder = node[i].holder;
+        cityLevel = node[i].cityLevel;
+
+        pushMatrix();
+        translate(x, y);
+        DrawCity(holder,cityLevel);
         popMatrix();
       }
 
       popMatrix();
     }
+
     public void Debug_Render(){
-      strokeWeight( 5 );
-      int holder;
-      for(int i=0;i<EdgeNum;i++){
-        holder = edge[i].holder;
-        if(holder == 0)stroke( 0, 0, 20 );
-        else stroke( 150/PLAYER_NUMBER * holder, 200, 200 );
-        drawEdge(i);
-      }
+      Render();
     }
 
     //指定されたエッジ番号のエッジの描画
     public void drawEdge(int edgeNumber){
       pushMatrix();
-      translate(500, 300);
       int i = edgeNumber;
       float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
       float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
@@ -1022,12 +1066,26 @@ public class FieldInfomation{
       line(x1,y1,x2,y2);
       popMatrix();
     }
+    //指定されたエッジ番号のエッジの描画
+    public void drawNode(int nodeNumber){
+      pushMatrix();
+      float x = position_x[ nodeNumber] * AREA_LENGTH;
+      float y = position_y[ nodeNumber] * AREA_LENGTH;
+      fill(0, 255, 255);//HSB
+      ellipse(x,y,20,20);
+      popMatrix();
+    }
 
     //エッジの所有者の設定
     public void SetEdgeOwner(int edgeNumber, int holder){
       edge[edgeNumber].SetHolder(holder);
     }
 
+    //エッジの所有者の設定
+    public void SetNodeOwner(int nodeNumber, int holder, int cityLevel){
+      if(holder == 0)cityLevel=0;//所有者がいないならcityLevelは0にしとく
+      node[nodeNumber].SetHolder_and_Level(holder, cityLevel);
+    }
 }
 
 //フィールドのエッジクラス(道路を敷く所)
@@ -1069,7 +1127,7 @@ class Edge{
 //フィールドのノードクラス(都市を置く所)
 class Node{
   int holder = 0;//どのプレイヤーが保持している都市か.０なら未使用
-  int CityLevel = 0;//都市のレベル.0:未使用,1:都市レベル1,2:都市レベル2
+  int cityLevel = 0;//都市のレベル.0:未使用,1:都市レベル1,2:都市レベル2
   List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
   List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
   List<Integer> nextNodeNumber = new ArrayList<Integer>();//隣り合ったノードの番号を格納する配列.長さは不定
@@ -1077,9 +1135,9 @@ class Node{
 
   //村を作る.引数は取った人の識別番号
   public void BuildVillage(int tmp_holder){
-    if(holder == 0 && CityLevel == 0){
+    if(holder == 0 && cityLevel == 0){
       holder = tmp_holder;
-      CityLevel++;
+      cityLevel++;
     }else{
       println("Node -> ErrorBuildCity");
     }
@@ -1087,11 +1145,17 @@ class Node{
 
   //村を都市に発展させる.
   public void Develop(){
-    if(holder != 0 && CityLevel == 1){
-      CityLevel++;
+    if(holder != 0 && cityLevel == 1){
+      cityLevel++;
     }else{
       println("Node -> ErrorDevelop");
     }
+  }
+
+  //都市の所有者とレベルを設定する
+  public void SetHolder_and_Level(int tmp_holder, int tmp_level){
+    holder = tmp_holder;
+    cityLevel = tmp_level;
   }
 
   //隣り合うエッジの番号を格納させる
@@ -1155,6 +1219,26 @@ public void DrawArea(AreaType type){
       image(ImageList_Area.get("Desert"),0,0,tmp,tmp);
       break;
     }
+}
+
+//都市を描画.今は色の設定だけ.
+public void DrawCity(int holder, int cityLevel){
+  int tmp = CITY_LENGTH;
+  if(holder == 0){
+
+  }
+  switch(cityLevel){
+    case 1:
+      image(ImageList_City1.get(String.valueOf(holder)),0,0,tmp,tmp);
+      break;
+    case 2:
+      image(ImageList_City2.get(String.valueOf(holder)),0,0,tmp,tmp);
+      break;
+    default:
+      image(Image_nonCity,0,0,tmp,tmp);
+      break;
+
+  }
 }
 
 //エリアのホールドナンバーを描画

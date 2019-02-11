@@ -8,6 +8,8 @@ public static final int TARGETKEY_RELEASED = 4;
 public static final int PLAYER_NUMBER = 3;
 //エリアの一辺の長さ
 public static final int AREA_LENGTH = 100;
+//都市描画の一辺の長さ
+public static final int CITY_LENGTH = 50;
 //ホールドナンバーの半径
 public static final int AREA_HOLDNUMBER_LENGTH = 40;
 

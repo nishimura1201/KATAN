@@ -219,40 +219,53 @@ public class FieldInfomation{
     public void Render(){
       pushMatrix();
       translate(500, 300);
+      float x,y;
+      int holder, cityLevel;
 
       //エリアの描画
-      float x,y;
       for(int i=0;i<AreaNum;i++){
         x = area[i].positionX * AREA_LENGTH;
         y = area[i].positionY * AREA_LENGTH * 3/4;
         pushMatrix();
         translate(x, y);
-        {
-          DrawArea(area[i].areaType);
+        DrawArea(area[i].areaType);
+        DrawAreaHoldNumber(area[i].holdNumber);
+        popMatrix();
+      }
 
-          //ellipse(0,0,AREA_LENGTH*1.2,AREA_LENGTH*1.2);
-          DrawAreaHoldNumber(area[i].holdNumber);
-        }
+      //エッジの所有者を表示
+      strokeWeight( 5 );
+      for(int i=0;i<EdgeNum;i++){
+        holder = edge[i].holder;
+        if(holder == 0)stroke( 0, 0, 20 );
+        else stroke( 150/PLAYER_NUMBER * holder+50, 200, 200 );
+        drawEdge(i);
+      }
+
+      //都市の描画
+      for(int i=0;i<NodeNum;i++){
+        x = position_x[i] * AREA_LENGTH;
+        y = position_y[i] * AREA_LENGTH;
+
+        holder = node[i].holder;
+        cityLevel = node[i].cityLevel;
+
+        pushMatrix();
+        translate(x, y);
+        DrawCity(holder,cityLevel);
         popMatrix();
       }
 
       popMatrix();
     }
+
     public void Debug_Render(){
-      strokeWeight( 5 );
-      int holder;
-      for(int i=0;i<EdgeNum;i++){
-        holder = edge[i].holder;
-        if(holder == 0)stroke( 0, 0, 20 );
-        else stroke( 150/PLAYER_NUMBER * holder, 200, 200 );
-        drawEdge(i);
-      }
+      Render();
     }
 
     //指定されたエッジ番号のエッジの描画
     public void drawEdge(int edgeNumber){
       pushMatrix();
-      translate(500, 300);
       int i = edgeNumber;
       float x1 = position_x[ edge[i].nextNodeNumber.get(0) ] * AREA_LENGTH;
       float x2 = position_x[ edge[i].nextNodeNumber.get(1) ] * AREA_LENGTH;
@@ -261,12 +274,26 @@ public class FieldInfomation{
       line(x1,y1,x2,y2);
       popMatrix();
     }
+    //指定されたエッジ番号のエッジの描画
+    public void drawNode(int nodeNumber){
+      pushMatrix();
+      float x = position_x[ nodeNumber] * AREA_LENGTH;
+      float y = position_y[ nodeNumber] * AREA_LENGTH;
+      fill(0, 255, 255);//HSB
+      ellipse(x,y,20,20);
+      popMatrix();
+    }
 
     //エッジの所有者の設定
     void SetEdgeOwner(int edgeNumber, int holder){
       edge[edgeNumber].SetHolder(holder);
     }
 
+    //エッジの所有者の設定
+    void SetNodeOwner(int nodeNumber, int holder, int cityLevel){
+      if(holder == 0)cityLevel=0;//所有者がいないならcityLevelは0にしとく
+      node[nodeNumber].SetHolder_and_Level(holder, cityLevel);
+    }
 }
 
 //フィールドのエッジクラス(道路を敷く所)
@@ -308,7 +335,7 @@ class Edge{
 //フィールドのノードクラス(都市を置く所)
 class Node{
   int holder = 0;//どのプレイヤーが保持している都市か.０なら未使用
-  int CityLevel = 0;//都市のレベル.0:未使用,1:都市レベル1,2:都市レベル2
+  int cityLevel = 0;//都市のレベル.0:未使用,1:都市レベル1,2:都市レベル2
   List<Integer> nextEdgeNumber = new ArrayList<Integer>();//隣り合ったエッジの番号を格納する配列.長さは不定
   List<Integer> nextAreaNumber = new ArrayList<Integer>();//隣り合ったエリアの番号を格納する配列.長さは不定
   List<Integer> nextNodeNumber = new ArrayList<Integer>();//隣り合ったノードの番号を格納する配列.長さは不定
@@ -316,9 +343,9 @@ class Node{
 
   //村を作る.引数は取った人の識別番号
   public void BuildVillage(int tmp_holder){
-    if(holder == 0 && CityLevel == 0){
+    if(holder == 0 && cityLevel == 0){
       holder = tmp_holder;
-      CityLevel++;
+      cityLevel++;
     }else{
       println("Node -> ErrorBuildCity");
     }
@@ -326,11 +353,17 @@ class Node{
 
   //村を都市に発展させる.
   public void Develop(){
-    if(holder != 0 && CityLevel == 1){
-      CityLevel++;
+    if(holder != 0 && cityLevel == 1){
+      cityLevel++;
     }else{
       println("Node -> ErrorDevelop");
     }
+  }
+
+  //都市の所有者とレベルを設定する
+  public void SetHolder_and_Level(int tmp_holder, int tmp_level){
+    holder = tmp_holder;
+    cityLevel = tmp_level;
   }
 
   //隣り合うエッジの番号を格納させる
@@ -394,6 +427,26 @@ void DrawArea(AreaType type){
       image(ImageList_Area.get("Desert"),0,0,tmp,tmp);
       break;
     }
+}
+
+//都市を描画.今は色の設定だけ.
+void DrawCity(int holder, int cityLevel){
+  int tmp = CITY_LENGTH;
+  if(holder == 0){
+
+  }
+  switch(cityLevel){
+    case 1:
+      image(ImageList_City1.get(String.valueOf(holder)),0,0,tmp,tmp);
+      break;
+    case 2:
+      image(ImageList_City2.get(String.valueOf(holder)),0,0,tmp,tmp);
+      break;
+    default:
+      image(Image_nonCity,0,0,tmp,tmp);
+      break;
+
+  }
 }
 
 //エリアのホールドナンバーを描画

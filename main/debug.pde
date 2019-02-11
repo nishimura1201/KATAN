@@ -1,7 +1,11 @@
 //デバッグモード
 class Debug implements IState{
   int targetEdge = 0;//所有者を変更しようとするエッジの番号
+  int targetNode = 0;//所有者を変更しようとするエッジの番号
   int targetHolder = 0;//設定しようとするプレイヤー番号,0なら未使用
+  int targetCityLevel = 0;//設定しようとする都市のレベル
+  int whichSetting = 0;//設定しようとしているのはどの要素か(0..エッジ,1..ノード)
+  int kindOfSetting = 2;//設定できる要素の数
   //コンストラクタ
   Debug(){
     //エッジの初期設定
@@ -23,8 +27,18 @@ class Debug implements IState{
   }
 
   public String Update(int elapsedTime){
-    //園児の所有者の設定
-    setEdgeOwner();
+    //設定する要素の選択
+    if(keyPushJudge.GetJudge("s")){
+      if(whichSetting == kindOfSetting-1)whichSetting = 0;
+      else whichSetting++;
+    }
+
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:setEdgeOwner();break;
+      //ノードの所有者の設定
+      case 1:setNodeOwner();break;
+    }
 
     return "null";
   };
@@ -34,19 +48,56 @@ class Debug implements IState{
   //描画
   public void Render(){
     fill(50, 50, 50, 255);
+    textSize(20);
     text("DebugMode", 10, 40);
-
+    switch(whichSetting){
+      case 0:text("Edge", 150, 40);break;
+      case 1:text("Node", 150, 40);break;
+    }
     //エッジの太描き
     fieldInfomation.Debug_Render();
 
-    //変数の表示
-    text("targetEdge:"+targetEdge, 50, 100);
-    text("targetHolder:"+targetHolder, 50, 150);
 
-    //選択しているエッジの強調描画
-    stroke( 200, 200, 200 );
-    strokeWeight( 10 );
-    fieldInfomation.drawEdge(targetEdge);
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:
+        //変数の表示
+        text("targetEdge:"+targetEdge, 50, 100);
+        text("targetHolder:"+targetHolder, 50, 150);
+        //選択しているエッジの強調描画
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(500, 300);
+        fieldInfomation.drawEdge(targetEdge);
+        popMatrix();
+        break;
+
+      //ノードの所有者の設定
+      case 1:
+        //変数の表示
+        text("targetNode:"+targetNode, 50, 100);
+        text("targetHolder:"+targetHolder, 50, 150);
+        text("targetCityLevel:"+targetCityLevel, 50, 200);
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(500, 300);
+        fieldInfomation.drawNode(targetNode);
+        popMatrix();
+        break;
+    }
+
+    //説明書き
+    textSize(15);
+    fill(0, 0, 0);//HSB
+    text("s:Change element of setting", 10, 300);
+    text("RIGHT:targetEdge+=1", 10, 320);
+    text("LEFT:targetEdge-=1", 10, 340);
+    text("UP:targetHolder+=1", 10, 360);
+    text("DOWN:targetEdge(Node)+=10", 10, 380);
+    text("l:cityLevel+=1(Node only)", 10, 400);
+
   }
 
   //エッジの所有者の設定
@@ -71,87 +122,33 @@ class Debug implements IState{
     }else if(keyPushJudge.GetJudge("ENTER")){
       fieldInfomation.SetEdgeOwner(targetEdge, targetHolder);
     }
-
   }
 
-}
-
-
-//↓不要
-//エッジとノードの所有者を設定するための関数が詰まったクラス
-class SetOwner{
-  int EdgeNum = 72;//辺の数
-  int NodeNum = 54;//ノードの数
-
-  int edgeHolder[] = new int[EdgeNum];//エッジの所持者を格納する
-  int nodeHolder[] = new int[NodeNum];//ノードの所持者を格納する
-  float position_x[] = new float[NodeNum];//描画する頂点位置のx座標
-  float position_y[] = new float[NodeNum];//描画する頂点位置のy座標
-  int edgeNextNode1[] = new int[EdgeNum];//エッジの端のノード番号1
-  int edgeNextNode2[] = new int[EdgeNum];//エッジの端のノード番号2
-
-
-  //コンストラクタ
-  SetOwner(){
-    //初期化
-    for(int i=0;i<EdgeNum;i++){
-      edgeHolder[i] = 0;
+  //ノードの所有者の設定
+  public void setNodeOwner(){
+    //右を押したらtargetNodeを進めて、左を押したらtargetNodeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで所有者とレベルの決定
+    if(keyPushJudge.GetJudge("RIGHT")){
+      if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
+      else targetNode++;
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      if(targetNode == 0)targetNode=FieldInfomation.NodeNum-1;
+      else targetNode--;
+    }else if(keyPushJudge.GetJudge("UP")){
+      //プレイヤー人数+(未使用状態)だから+1する
+      if(targetHolder+1 == PLAYER_NUMBER+1)targetHolder = 0;
+      else targetHolder++;
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetNode+10 > FieldInfomation.NodeNum)targetNode = 0;
+      else targetNode+=10;
+    }else if(keyPushJudge.GetJudge("l")){
+      if(targetCityLevel == 2)targetCityLevel = 0;
+      else targetCityLevel++;
     }
-    for(int i=0;i<NodeNum;i++){
-      nodeHolder[i] = 0;
+    else if(keyPushJudge.GetJudge("ENTER")){
+      fieldInfomation.SetNodeOwner(targetNode, targetHolder, targetCityLevel);
     }
-
-    //ノードの描画座標の位置を格納
-    {
-      String lines[] = loadStrings("data/NodeDrawPosition.csv");
-      String lin;
-      String [] splited;
-      for(int i=1;i<NodeNum+1;i++){//1行目はラベル
-        lin = lines[i];
-        splited = split(lin,',');
-        position_x[i-1] = float(splited[1]);//x座標
-        position_y[i-1] = float(splited[2])/4;//y座標
-      }
-    }
-
-    //エッジの端にあるノードの番号を格納
-    {
-      String lines[] = loadStrings("data/EdgeNextNode.csv");
-      String lin;
-      String [] splited;
-      for(int i=1;i<EdgeNum+1;i++){//1行目はラベル
-        lin = lines[i];
-        splited = split(lin,',');
-        edgeNextNode1[i-1] = int(splited[1]);
-        edgeNextNode2[i-1] = int(splited[2]);
-      }
-    }
-
-  }
-
-  //エッジの所有者の設定
-  void SetEdgeOwner(){
-
-  }
-
-  //更新
-  void Update(){
-
-  }
-
-  //描画
-  void Render(){
-    pushMatrix();
-    translate(500, 300);
-    stroke( 100, 0, 0 );
-    strokeWeight( 3 );
-    for(int i=0;i<EdgeNum;i++){
-      float x1 = position_x[ edgeNextNode1[i] ] * AREA_LENGTH;
-      float x2 = position_x[ edgeNextNode2[i] ] * AREA_LENGTH;
-      float y1 = position_y[ edgeNextNode1[i] ] * AREA_LENGTH;
-      float y2 = position_y[ edgeNextNode2[i] ] * AREA_LENGTH;
-      line(x1,y1,x2,y2);
-    }
-    popMatrix();
   }
 }

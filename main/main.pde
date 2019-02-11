@@ -14,6 +14,9 @@ FieldInfomation fieldInfomation;
 //画像
 HashMap<String, PImage> ImageList_Area;
 HashMap<String, PImage> ImageList_Number;
+HashMap<String, PImage> ImageList_City1;
+HashMap<String, PImage> ImageList_City2;
+PImage Image_nonCity;
 
 void setup() {
 
@@ -42,7 +45,8 @@ void init(){
    //画像
    ImageList_Area = new HashMap<String, PImage>();
    ImageList_Number = new HashMap<String, PImage>();
-
+   ImageList_City1 = new HashMap<String, PImage>();
+   ImageList_City2 = new HashMap<String, PImage>();
 
   //画像読み込み
   ImageList_Area.put("Desert"   ,loadImage("img/area/Desert.png"));
@@ -52,17 +56,26 @@ void init(){
   ImageList_Area.put("Pasture"  ,loadImage("img/area/Pasture.png"));
   ImageList_Area.put("Hills"    ,loadImage("img/area/Hills.png"));
 
-  ImageList_Number.put("2"   ,loadImage("img/Number/2.png"));
-  ImageList_Number.put("3"   ,loadImage("img/Number/3.png"));
-  ImageList_Number.put("4"   ,loadImage("img/Number/4.png"));
-  ImageList_Number.put("5"   ,loadImage("img/Number/5.png"));
-  ImageList_Number.put("6"   ,loadImage("img/Number/6.png"));
-  ImageList_Number.put("8"   ,loadImage("img/Number/8.png"));
-  ImageList_Number.put("9"   ,loadImage("img/Number/9.png"));
-  ImageList_Number.put("10"  ,loadImage("img/Number/10.png"));
-  ImageList_Number.put("11"  ,loadImage("img/Number/11.png"));
-  ImageList_Number.put("12"  ,loadImage("img/Number/12.png"));
+  ImageList_Number.put("2"   ,loadImage("img/number/2.png"));
+  ImageList_Number.put("3"   ,loadImage("img/number/3.png"));
+  ImageList_Number.put("4"   ,loadImage("img/number/4.png"));
+  ImageList_Number.put("5"   ,loadImage("img/number/5.png"));
+  ImageList_Number.put("6"   ,loadImage("img/number/6.png"));
+  ImageList_Number.put("8"   ,loadImage("img/number/8.png"));
+  ImageList_Number.put("9"   ,loadImage("img/number/9.png"));
+  ImageList_Number.put("10"  ,loadImage("img/number/10.png"));
+  ImageList_Number.put("11"  ,loadImage("img/number/11.png"));
+  ImageList_Number.put("12"  ,loadImage("img/number/12.png"));
 
+  ImageList_City1.put("1"   ,loadImage("img/city/city1_1.png"));
+  ImageList_City1.put("2"   ,loadImage("img/city/city1_2.png"));
+  ImageList_City1.put("3"   ,loadImage("img/city/city1_3.png"));
+
+  ImageList_City2.put("1"   ,loadImage("img/city/city2_1.png"));
+  ImageList_City2.put("2"   ,loadImage("img/city/city2_2.png"));
+  ImageList_City2.put("3"   ,loadImage("img/city/city2_3.png"));
+
+  Image_nonCity = loadImage("img/city/nonCity.png");
 }
 
 
