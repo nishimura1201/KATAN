@@ -149,6 +149,12 @@ public class KeyPushJudge{
     else {println("keyJudgeError");return false;}
   }
 }
+
 void mousePressed() {
   mouseClickTorF = MOUSE_CLICK;
+}
+
+//debugのための関数を使用するためのSAMインターフェイス
+public interface AddMaterial{
+    public abstract void AddMaterial(MaterialType m, int num);
 }

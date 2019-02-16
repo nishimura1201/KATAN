@@ -2,7 +2,7 @@
 
 //メインステートマシン
 class MainStateMachine extends StateChanger{
-    String orderPlayer[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
+    String orderPlayerName[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
     int whoseTurn = 0;//今誰のターンなのか管理する
     boolean debugFlag = false;//デバッグモードONのフラグ
     //コンストラクタ
@@ -14,9 +14,9 @@ class MainStateMachine extends StateChanger{
       Add("player3",new PlayerStateMachine( "player3"));
       Add("debug",new Debug());
       //プレイヤーのターン順序
-      orderPlayer[0] = "player1";
-      orderPlayer[1] = "player2";
-      orderPlayer[2] = "player3";
+      orderPlayerName[0] = "player1";
+      orderPlayerName[1] = "player2";
+      orderPlayerName[2] = "player3";
       //最初はplayer1から
       Change("player1");
     }
@@ -40,12 +40,12 @@ class MainStateMachine extends StateChanger{
       switch(order){
         //次のプレイヤーにステートを移す
         case "ChangePlayer":
-          if(whoseTurn+1 == orderPlayer.length){
+          if(whoseTurn+1 == orderPlayerName.length){
             whoseTurn = 0;
           }else{
             whoseTurn+=1;
           }
-          Change(orderPlayer[whoseTurn]);
+          Change(orderPlayerName[whoseTurn]);
           break;
       }
 
@@ -89,10 +89,13 @@ public class StateChanger implements IState{
     childOn = true;
   }
 
+  //子供のステートを追加する
   public void Add(String name, IState state){
     mStates.put(name,state);
     childList.add(name);//子リストに追加
   }
+  //メッセージを受け取ってそれに応じた関数をキックする
+  public void MessageOrder(String message){};
   public String Update(int elapsedTime){return "null";};
   public void Render(){};
   public void OnEnter(){};
@@ -122,6 +125,8 @@ public interface IState{
   public void Render();
   public void OnEnter();
   public void OnExit();
+  public void MessageOrder(String message);
+
 }
 
 //空のステート
@@ -130,4 +135,5 @@ class emptyState implements IState{
   public void Render(){};
   public void OnEnter(){};
   public void OnExit(){};
+  public void MessageOrder(String message){};
 }

@@ -6,7 +6,8 @@ class PlayerStateMachine extends StateChanger{
   String MyName;//自分の名前
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
   HashMap<MaterialType, Integer> material = new HashMap<MaterialType, Integer>();//資材を管理するやつ
-
+  int parameterRectSizeX = 300;//パラメータ表示の枠サイズX
+  int parameterRectSizeY = 400;//パラメータ表示の枠サイズY
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
   public PlayerStateMachine(String tmp_MyName){
 
@@ -21,7 +22,6 @@ class PlayerStateMachine extends StateChanger{
     for (MaterialType m : MaterialType.values()) {
       material.put(m,0);
     }
-
 
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
     Add(PlayerSelectable.choiceCard.getString()     ,new ChoiceCard(this));
@@ -46,14 +46,12 @@ class PlayerStateMachine extends StateChanger{
     return cardList;
   }
   //資材を追加する(資材の種類, 追加する個数)
-  public AddMaterial(MaterialType m, int num){
+  public void AddMaterial(MaterialType m, int num){
     int tmp = material.get(m);
     material.put(m, tmp+num);
   }
 
-
   public String Update(int elapsedTime){
-
     //子に主導権が移ってるならここでの操作は行わんようにっていうやつ
     if(childOn == true){
       String order = mCurrentState.Update(elapsedTime);//子の呼び出し
@@ -80,10 +78,48 @@ class PlayerStateMachine extends StateChanger{
     return "null";
   };
   public void Render(){
+    //デバッグ用に今選択くしている行動を画面右下に表示
     fill(50, 50, 50, 255);
     textSize(20);
     text(MyName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
+
+    ParameterRender();//パラメータの表示
     mCurrentState.Render();//子の呼び出し
+  };
+
+  //パラメータの表示
+  public void ParameterRender(){
+    fill(50, 50, 50, 255);
+
+    //名前の表示
+    textSize(30);
+    text(MyName, 50, 30);
+
+    //枠の表示
+    stroke(100,50,50);
+    noFill();
+    strokeWeight(2);
+    rect(50, 50, parameterRectSizeX, parameterRectSizeY);
+    rect(50+4, 50+4, parameterRectSizeX-8, parameterRectSizeY-8);
+
+    //パラメータの表示
+    textSize(30);
+    text("Brick     :"+material.get(MaterialType.Brick), 60, 85);
+    text("Lumber :"+material.get(MaterialType.Lumber), 60, 115);
+    text("Wool     :"+material.get(MaterialType.Wool), 60, 145);
+    text("Grain    :"+material.get(MaterialType.Grain), 60, 175);
+    text("Iron       :"+material.get(MaterialType.Iron), 60, 205);
+  }
+  public void MessageOrder(String message){
+    switch(message){
+      //デバッグ用のAddMaterialをキックする
+      case "debug_AddMaterial":
+        AddMaterial(debug_AddMaterial_m, debug_AddMaterial_num);
+        break;
+      case "ParameterRender":
+        ParameterRender();
+        break;
+    }
   };
   public void OnEnter(){};
   public void OnExit(){};

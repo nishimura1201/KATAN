@@ -33,11 +33,48 @@ enum AreaType{
 
 //資材の種類
 enum MaterialType{
-  Brick,
-  Lumber,
-  Wool,
-  Grain,
-  Iron
+  Brick(0, "Brick"),
+  Lumber(1, "Lumber"),
+  Wool(2, "Wool"),
+  Grain(3, "Grain"),
+  Iron(4, "Iron");
+
+  private final int id;
+  private final String name;
+  private MaterialType(final int id,final String name) {
+    this.id = id;
+    this.name = name;
+  }
+  public int getId() {
+    return id;
+  }
+  public String getName() {
+    return name;
+  }
+
+  //数値から対応する要素の名前を返す
+  public static String toString(int tmp) {
+    for (MaterialType num : values()) {
+        if (num.getId() == tmp) { // id が一致するものを探す
+            return num.getName();
+        }
+    }
+    println("MaterialType : unknown number\n");
+    return "null";
+  }
+
+  //数値から対応する要素を返す
+  public static MaterialType fromInt(int tmp) {
+    switch(tmp){
+      case 0:return( MaterialType.Brick );
+      case 1:return( MaterialType.Lumber );
+      case 2:return( MaterialType.Wool );
+      case 3:return( MaterialType.Grain );
+      case 4:return( MaterialType.Iron );
+
+      default:return( MaterialType.Brick );
+    }
+  }
 }
 
 //プレイヤー関数が持つ選択肢の種類
