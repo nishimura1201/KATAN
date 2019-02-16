@@ -32,15 +32,17 @@ FieldInfomation fieldInfomation;
 
 
 //画像
-HashMap<String, PImage> ImageList_Area;
+HashMap<AreaType, PImage> ImageList_Area;
 HashMap<String, PImage> ImageList_Number;
 HashMap<String, PImage> ImageList_City1;
 HashMap<String, PImage> ImageList_City2;
 PImage Image_nonCity;
 
+public void settings() {
+  size(FIELD_LENGTH_X, FIELD_LENGTH_Y, P2D);
+}
 public void setup() {
 
-  
   noStroke();
   frameRate(60);
 
@@ -63,18 +65,18 @@ public void init(){
 
 
    //画像
-   ImageList_Area = new HashMap<String, PImage>();
+   ImageList_Area = new HashMap<AreaType, PImage>();
    ImageList_Number = new HashMap<String, PImage>();
    ImageList_City1 = new HashMap<String, PImage>();
    ImageList_City2 = new HashMap<String, PImage>();
 
   //画像読み込み
-  ImageList_Area.put("Desert"   ,loadImage("img/area/Desert.png"));
-  ImageList_Area.put("Fields"   ,loadImage("img/area/Fields.png"));
-  ImageList_Area.put("Forest"   ,loadImage("img/area/Forest.png"));
-  ImageList_Area.put("Mountains",loadImage("img/area/Mountains.png"));
-  ImageList_Area.put("Pasture"  ,loadImage("img/area/Pasture.png"));
-  ImageList_Area.put("Hills"    ,loadImage("img/area/Hills.png"));
+  ImageList_Area.put(AreaType.Desert   ,loadImage("img/area/Desert.png"));
+  ImageList_Area.put(AreaType.Fields   ,loadImage("img/area/Fields.png"));
+  ImageList_Area.put(AreaType.Forest   ,loadImage("img/area/Forest.png"));
+  ImageList_Area.put(AreaType.Mountains,loadImage("img/area/Mountains.png"));
+  ImageList_Area.put(AreaType.Pasture  ,loadImage("img/area/Pasture.png"));
+  ImageList_Area.put(AreaType.Hills    ,loadImage("img/area/Hills.png"));
 
   ImageList_Number.put("2"   ,loadImage("img/number/2.png"));
   ImageList_Number.put("3"   ,loadImage("img/number/3.png"));
@@ -118,7 +120,7 @@ public void draw() {
 
 //メインステートマシン
 class MainStateMachine extends StateChanger{
-    String orderPlayer[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
+    String orderPlayerName[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
     int whoseTurn = 0;//今誰のターンなのか管理する
     boolean debugFlag = false;//デバッグモードONのフラグ
     //コンストラクタ
@@ -130,9 +132,9 @@ class MainStateMachine extends StateChanger{
       Add("player3",new PlayerStateMachine( "player3"));
       Add("debug",new Debug());
       //プレイヤーのターン順序
-      orderPlayer[0] = "player1";
-      orderPlayer[1] = "player2";
-      orderPlayer[2] = "player3";
+      orderPlayerName[0] = "player1";
+      orderPlayerName[1] = "player2";
+      orderPlayerName[2] = "player3";
       //最初はplayer1から
       Change("player1");
     }
@@ -156,12 +158,12 @@ class MainStateMachine extends StateChanger{
       switch(order){
         //次のプレイヤーにステートを移す
         case "ChangePlayer":
-          if(whoseTurn+1 == orderPlayer.length){
+          if(whoseTurn+1 == orderPlayerName.length){
             whoseTurn = 0;
           }else{
             whoseTurn+=1;
           }
-          Change(orderPlayer[whoseTurn]);
+          Change(orderPlayerName[whoseTurn]);
           break;
       }
 
@@ -170,6 +172,13 @@ class MainStateMachine extends StateChanger{
 
     public void Render(){
         mCurrentState.Render();
+        fill(50, 50, 50, 255);
+        textSize(20);
+        text("D         :debug mode", 10, FIELD_LENGTH_Y-100 + 0);
+        text("A         :change player", 10, FIELD_LENGTH_Y-100 + 20);
+        text("Z         :change motion", 10, FIELD_LENGTH_Y-100 + 40);
+        text("ENTER     :choice motion", 10, FIELD_LENGTH_Y-100 + 60);
+        text("BACK SPACE:back to player", 10, FIELD_LENGTH_Y-100 + 80);
     }
 }
 
@@ -198,10 +207,13 @@ public class StateChanger implements IState{
     childOn = true;
   }
 
+  //子供のステートを追加する
   public void Add(String name, IState state){
     mStates.put(name,state);
     childList.add(name);//子リストに追加
   }
+  //メッセージを受け取ってそれに応じた関数をキックする
+  public void MessageOrder(String message){};
   public String Update(int elapsedTime){return "null";};
   public void Render(){};
   public void OnEnter(){};
@@ -231,6 +243,8 @@ public interface IState{
   public void Render();
   public void OnEnter();
   public void OnExit();
+  public void MessageOrder(String message);
+
 }
 
 //空のステート
@@ -239,6 +253,7 @@ class emptyState implements IState{
   public void Render(){};
   public void OnEnter(){};
   public void OnExit(){};
+  public void MessageOrder(String message){};
 }
 //キーボード・マウスクリック関連。それぞれの値に意味はない
 public static final int MOUSE_CLICK = 1;
@@ -255,6 +270,12 @@ public static final int CITY_LENGTH = 50;
 //ホールドナンバーの半径
 public static final int AREA_HOLDNUMBER_LENGTH = 40;
 
+//フィールドの大きさ
+public static final int FIELD_LENGTH_X = 1100;
+public static final int FIELD_LENGTH_Y = 800;
+//フィールドを書く位置
+public static final int FIELD_POSITION_X = 800;
+public static final int FIELD_POSITION_Y = 250;
 
 //エリアの種類
 enum AreaType{
@@ -266,6 +287,53 @@ enum AreaType{
   Grassland,
   Desert
 }
+
+//資材の種類
+enum MaterialType{
+  Brick(0, "Brick"),
+  Lumber(1, "Lumber"),
+  Wool(2, "Wool"),
+  Grain(3, "Grain"),
+  Iron(4, "Iron");
+
+  private final int id;
+  private final String name;
+  private MaterialType(final int id,final String name) {
+    this.id = id;
+    this.name = name;
+  }
+  public int getId() {
+    return id;
+  }
+  public String getName() {
+    return name;
+  }
+
+  //数値から対応する要素の名前を返す
+  public static String toString(int tmp) {
+    for (MaterialType num : values()) {
+        if (num.getId() == tmp) { // id が一致するものを探す
+            return num.getName();
+        }
+    }
+    println("MaterialType : unknown number\n");
+    return "null";
+  }
+
+  //数値から対応する要素を返す
+  public static MaterialType fromInt(int tmp) {
+    switch(tmp){
+      case 0:return( MaterialType.Brick );
+      case 1:return( MaterialType.Lumber );
+      case 2:return( MaterialType.Wool );
+      case 3:return( MaterialType.Grain );
+      case 4:return( MaterialType.Iron );
+
+      default:return( MaterialType.Brick );
+    }
+  }
+}
+
 //プレイヤー関数が持つ選択肢の種類
 enum PlayerSelectable{
   dice("dice"),
@@ -289,7 +357,9 @@ class PlayerStateMachine extends StateChanger{
   int listIndex = 0;//どの子を選択しようとしているのかというindex
   String MyName;//自分の名前
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
-
+  HashMap<MaterialType, Integer> material = new HashMap<MaterialType, Integer>();//資材を管理するやつ
+  int parameterRectSizeX = 300;//パラメータ表示の枠サイズX
+  int parameterRectSizeY = 400;//パラメータ表示の枠サイズY
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
   public PlayerStateMachine(String tmp_MyName){
 
@@ -300,6 +370,10 @@ class PlayerStateMachine extends StateChanger{
     CardAdd("card3");
     CardAdd("card4");
 
+    //資材の初期化
+    for (MaterialType m : MaterialType.values()) {
+      material.put(m,0);
+    }
 
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
     Add(PlayerSelectable.choiceCard.getString()     ,new ChoiceCard(this));
@@ -323,10 +397,13 @@ class PlayerStateMachine extends StateChanger{
   public List<String> GetCardList(){
     return cardList;
   }
-
+  //資材を追加する(資材の種類, 追加する個数)
+  public void AddMaterial(MaterialType m, int num){
+    int tmp = material.get(m);
+    material.put(m, tmp+num);
+  }
 
   public String Update(int elapsedTime){
-
     //子に主導権が移ってるならここでの操作は行わんようにっていうやつ
     if(childOn == true){
       String order = mCurrentState.Update(elapsedTime);//子の呼び出し
@@ -353,10 +430,48 @@ class PlayerStateMachine extends StateChanger{
     return "null";
   };
   public void Render(){
+    //デバッグ用に今選択くしている行動を画面右下に表示
     fill(50, 50, 50, 255);
-    textSize(25);
-    text(MyName +"  "+ childList.get(listIndex), 50, 50);
+    textSize(20);
+    text(MyName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
+
+    ParameterRender();//パラメータの表示
     mCurrentState.Render();//子の呼び出し
+  };
+
+  //パラメータの表示
+  public void ParameterRender(){
+    fill(50, 50, 50, 255);
+
+    //名前の表示
+    textSize(30);
+    text(MyName, 50, 30);
+
+    //枠の表示
+    stroke(100,50,50);
+    noFill();
+    strokeWeight(2);
+    rect(50, 50, parameterRectSizeX, parameterRectSizeY);
+    rect(50+4, 50+4, parameterRectSizeX-8, parameterRectSizeY-8);
+
+    //パラメータの表示
+    textSize(30);
+    text("Brick     :"+material.get(MaterialType.Brick), 60, 85);
+    text("Lumber :"+material.get(MaterialType.Lumber), 60, 115);
+    text("Wool     :"+material.get(MaterialType.Wool), 60, 145);
+    text("Grain    :"+material.get(MaterialType.Grain), 60, 175);
+    text("Iron       :"+material.get(MaterialType.Iron), 60, 205);
+  }
+  public void MessageOrder(String message){
+    switch(message){
+      //デバッグ用のAddMaterialをキックする
+      case "debug_AddMaterial":
+        AddMaterial(debug_AddMaterial_m, debug_AddMaterial_num);
+        break;
+      case "ParameterRender":
+        ParameterRender();
+        break;
+    }
   };
   public void OnEnter(){};
   public void OnExit(){};
@@ -376,7 +491,8 @@ class Dice extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("Dice", 100, 100);
+    textSize(20);
+    text("Dice", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
   };
   public void OnEnter(){};
   public void OnExit(){};
@@ -403,9 +519,10 @@ class ChoiceCard extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("choiseCard", 100, 100);
+    textSize(20);
+    text("choiseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
     for(int i=0;i<cardList.size();i++){
-       text(cardList.get(i), 200, 100 + 50*(i+1));
+       text(cardList.get(i), FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180 + 20*(i+1));
     }
   };
   public void OnEnter(){
@@ -431,7 +548,8 @@ class TradeWithOther extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("TradeWithOther", 100, 100);
+    textSize(20);
+    text("TradeWithOther", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
@@ -453,7 +571,8 @@ class UseCard extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("UseCard", 100, 100);
+    textSize(20);
+    text("UseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
@@ -476,12 +595,16 @@ class Development extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("Development", 100, 100);
+    textSize(20);
+    text("Development", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
   public void OnExit(){};
 }
+public MaterialType debug_AddMaterial_m = MaterialType.Brick;//デバッグに使うためのグローバル変数
+public int debug_AddMaterial_num = 1;//デバッグに使うためのグローバル変数
+
 //デバッグモード
 class Debug implements IState{
   int targetEdge = 0;//所有者を変更しようとするエッジの番号
@@ -489,7 +612,10 @@ class Debug implements IState{
   int targetHolder = 0;//設定しようとするプレイヤー番号,0なら未使用
   int targetCityLevel = 0;//設定しようとする都市のレベル
   int whichSetting = 0;//設定しようとしているのはどの要素か(0..エッジ,1..ノード)
-  int kindOfSetting = 2;//設定できる要素の数
+  final static int KIND_OF_SETTING = 3;//設定できる要素の数
+  int targetPlayer = 0;//設定しようとしているプレイヤー
+  int targetMaterial = 0;//設定しようとしている資材の番号
+
   //コンストラクタ
   Debug(){
     //エッジの初期設定
@@ -513,7 +639,7 @@ class Debug implements IState{
   public String Update(int elapsedTime){
     //設定する要素の選択
     if(keyPushJudge.GetJudge("s")){
-      if(whichSetting == kindOfSetting-1)whichSetting = 0;
+      if(whichSetting == KIND_OF_SETTING-1)whichSetting = 0;
       else whichSetting++;
     }
 
@@ -522,37 +648,51 @@ class Debug implements IState{
       case 0:setEdgeOwner();break;
       //ノードの所有者の設定
       case 1:setNodeOwner();break;
+      //資材の設定
+      case 2:setMaterial();break;
+      default:break;
     }
 
     return "null";
   };
   public void OnEnter(){};
   public void OnExit(){};
-
+  public void MessageOrder(String message){};
   //描画
   public void Render(){
+    //編集しようとしているプレイヤーのパラメータ表示
+    {
+      String playerName = mainStateMachine.orderPlayerName[targetPlayer];//プレイヤーの名前
+      IState tmpPSM = mainStateMachine.mStates.get(playerName);//対象プレイヤーのステートマシン
+      tmpPSM.MessageOrder( "ParameterRender" );
+    }
+
+    //今デバッグしようとしている要素名を表示
     fill(50, 50, 50, 255);
     textSize(20);
-    text("DebugMode", 10, 40);
+    text("DebugMode", FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 180);
     switch(whichSetting){
-      case 0:text("Edge", 150, 40);break;
-      case 1:text("Node", 150, 40);break;
+      case 0:text("Edge", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      case 1:text("Node", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      case 2:text("Material", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      default:break;
     }
+
     //エッジの太描き
     fieldInfomation.Debug_Render();
 
-
+    //デバッグする要素ごとに変数値の表示
     switch(whichSetting){
       //エッジの所有者の設定
       case 0:
         //変数の表示
-        text("targetEdge:"+targetEdge, 50, 100);
-        text("targetHolder:"+targetHolder, 50, 150);
+        text("targetEdge:"+targetEdge, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        text("targetHolder:"+targetHolder, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 130);
         //選択しているエッジの強調描画
         stroke( 200, 200, 200 );
         strokeWeight( 10 );
         pushMatrix();
-        translate(500, 300);
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
         fieldInfomation.drawEdge(targetEdge);
         popMatrix();
         break;
@@ -560,27 +700,51 @@ class Debug implements IState{
       //ノードの所有者の設定
       case 1:
         //変数の表示
-        text("targetNode:"+targetNode, 50, 100);
-        text("targetHolder:"+targetHolder, 50, 150);
-        text("targetCityLevel:"+targetCityLevel, 50, 200);
+        text("targetNode:"+targetNode, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        text("targetHolder:"+targetHolder, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 130);
+        text("targetCityLevel:"+targetCityLevel, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 110);
         stroke( 200, 200, 200 );
         strokeWeight( 10 );
         pushMatrix();
-        translate(500, 300);
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
         fieldInfomation.drawNode(targetNode);
         popMatrix();
         break;
+
+      case 2:
+        //変数の表示
+        text("targetPlayer:"+mainStateMachine.orderPlayerName[targetPlayer], FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        text("targetMaterial:" + MaterialType.toString(targetMaterial), FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 130);
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
+        popMatrix();
+        break;
+
+      default:break;
     }
 
     //説明書き
-    textSize(15);
-    fill(0, 0, 0);//HSB
-    text("s:Change element of setting", 10, 300);
-    text("RIGHT:targetEdge+=1", 10, 320);
-    text("LEFT:targetEdge-=1", 10, 340);
-    text("UP:targetHolder+=1", 10, 360);
-    text("DOWN:targetEdge(Node)+=10", 10, 380);
-    text("l:cityLevel+=1(Node only)", 10, 400);
+    fill(50, 50, 50, 255);
+    textSize(20);
+    switch(whichSetting){
+      case 0:
+      case 1:
+        text("s:Change element of setting", 300, FIELD_LENGTH_Y-100 - 20);
+        text("RIGHT:targetEdge+=1", 300, FIELD_LENGTH_Y-100 + 0);
+        text("LEFT:targetEdge-=1", 300, FIELD_LENGTH_Y-100 + 20);
+        text("UP:targetHolder+=1", 300, FIELD_LENGTH_Y-100 + 40);
+        text("DOWN:targetEdge(Node)+=10", 300, FIELD_LENGTH_Y-100 + 60);
+        text("l:cityLevel+=1(Node only)", 300, FIELD_LENGTH_Y-100 + 80);
+        break;
+      case 2:
+        text("RIGHT:targetPlayer+=1", 300, FIELD_LENGTH_Y-100 + 0);
+        text("UP:targetMaterial+=1", 300, FIELD_LENGTH_Y-100 + 20);
+        text("ENTER:add number", 300, FIELD_LENGTH_Y-100 + 40);
+        break;
+    }
+
 
   }
 
@@ -634,6 +798,23 @@ class Debug implements IState{
     else if(keyPushJudge.GetJudge("ENTER")){
       fieldInfomation.SetNodeOwner(targetNode, targetHolder, targetCityLevel);
     }
+  }
+
+  //資材の設定
+  public void setMaterial(){
+    if(keyPushJudge.GetJudge("RIGHT")){
+      if(targetPlayer+1 == PLAYER_NUMBER)targetPlayer = 0;
+      else targetPlayer+=1;
+    }else if(keyPushJudge.GetJudge("UP")){
+      if(targetMaterial+1 == MaterialType.values().length)targetMaterial = 0;
+      else targetMaterial+=1;
+    }else if(keyPushJudge.GetJudge("ENTER")){
+      String playerName = mainStateMachine.orderPlayerName[targetPlayer];//プレイヤーの名前
+      IState tmpPSM = mainStateMachine.mStates.get(playerName);//対象プレイヤーのステートマシン
+      debug_AddMaterial_m = MaterialType.fromInt( targetMaterial );//変更する要素
+      tmpPSM.MessageOrder( "debug_AddMaterial" );
+    }
+
   }
 }
 int mouseClickTorF = MOUSE_NOTCLICK;
@@ -787,8 +968,14 @@ public class KeyPushJudge{
     else {println("keyJudgeError");return false;}
   }
 }
+
 public void mousePressed() {
   mouseClickTorF = MOUSE_CLICK;
+}
+
+//debugのための関数を使用するためのSAMインターフェイス
+public interface AddMaterial{
+    public abstract void AddMaterial(MaterialType m, int num);
 }
 /* フィールドに関するクラスとか */
 
@@ -1010,7 +1197,7 @@ public class FieldInfomation{
 
     public void Render(){
       pushMatrix();
-      translate(500, 300);
+      translate(FIELD_POSITION_X, FIELD_POSITION_Y);
       float x,y;
       int holder, cityLevel;
 
@@ -1026,11 +1213,11 @@ public class FieldInfomation{
       }
 
       //エッジの所有者を表示
-      strokeWeight( 5 );
+
       for(int i=0;i<EdgeNum;i++){
         holder = edge[i].holder;
-        if(holder == 0)stroke( 0, 0, 20 );
-        else stroke( 150/PLAYER_NUMBER * holder+50, 200, 200 );
+        if(holder == 0){      strokeWeight( 5 );stroke( 0, 0, 40 );}
+        else{     strokeWeight( 10 );stroke(150/PLAYER_NUMBER * holder+50, 200, 200 );};
         drawEdge(i);
       }
 
@@ -1196,29 +1383,7 @@ class Area{
 //エリアを描画.今は色の設定だけ.
 public void DrawArea(AreaType type){
   int tmp = AREA_LENGTH;
-  switch(type){
-    case Hills:
-      image(ImageList_Area.get("Hills"),0,0,tmp,tmp);
-      break;
-    case Pasture:
-      image(ImageList_Area.get("Pasture"),0,0,tmp,tmp);
-      break;
-    case Mountains:
-      image(ImageList_Area.get("Mountains"),0,0,tmp,tmp);
-      break;
-    case Forest:
-      image(ImageList_Area.get("Forest"),0,0,tmp,tmp);
-      break;
-    case Fields:
-      image(ImageList_Area.get("Fields"),0,0,tmp,tmp);
-      break;
-    case Grassland:
-      image(ImageList_Area.get("Grassland"),0,0,tmp,tmp);
-      break;
-    case Desert:
-      image(ImageList_Area.get("Desert"),0,0,tmp,tmp);
-      break;
-    }
+  image(ImageList_Area.get(type),0,0,tmp,tmp);
 }
 
 //都市を描画.今は色の設定だけ.
@@ -1277,7 +1442,6 @@ public void DrawAreaHoldNumber(int holdNumber){
       break;
     }
 }
-  public void settings() {  size(800, 600, P2D); }
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "main" };
     if (passedArgs != null) {

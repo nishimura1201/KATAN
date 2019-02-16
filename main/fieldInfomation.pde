@@ -218,7 +218,7 @@ public class FieldInfomation{
 
     public void Render(){
       pushMatrix();
-      translate(500, 300);
+      translate(FIELD_POSITION_X, FIELD_POSITION_Y);
       float x,y;
       int holder, cityLevel;
 
@@ -234,11 +234,11 @@ public class FieldInfomation{
       }
 
       //エッジの所有者を表示
-      strokeWeight( 5 );
+
       for(int i=0;i<EdgeNum;i++){
         holder = edge[i].holder;
-        if(holder == 0)stroke( 0, 0, 20 );
-        else stroke( 150/PLAYER_NUMBER * holder+50, 200, 200 );
+        if(holder == 0){      strokeWeight( 5 );stroke( 0, 0, 40 );}
+        else{     strokeWeight( 10 );stroke(150/PLAYER_NUMBER * holder+50, 200, 200 );};
         drawEdge(i);
       }
 
@@ -404,29 +404,7 @@ class Area{
 //エリアを描画.今は色の設定だけ.
 void DrawArea(AreaType type){
   int tmp = AREA_LENGTH;
-  switch(type){
-    case Hills:
-      image(ImageList_Area.get("Hills"),0,0,tmp,tmp);
-      break;
-    case Pasture:
-      image(ImageList_Area.get("Pasture"),0,0,tmp,tmp);
-      break;
-    case Mountains:
-      image(ImageList_Area.get("Mountains"),0,0,tmp,tmp);
-      break;
-    case Forest:
-      image(ImageList_Area.get("Forest"),0,0,tmp,tmp);
-      break;
-    case Fields:
-      image(ImageList_Area.get("Fields"),0,0,tmp,tmp);
-      break;
-    case Grassland:
-      image(ImageList_Area.get("Grassland"),0,0,tmp,tmp);
-      break;
-    case Desert:
-      image(ImageList_Area.get("Desert"),0,0,tmp,tmp);
-      break;
-    }
+  image(ImageList_Area.get(type),0,0,tmp,tmp);
 }
 
 //都市を描画.今は色の設定だけ.

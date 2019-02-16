@@ -12,15 +12,17 @@ FieldInfomation fieldInfomation;
 
 
 //画像
-HashMap<String, PImage> ImageList_Area;
+HashMap<AreaType, PImage> ImageList_Area;
 HashMap<String, PImage> ImageList_Number;
 HashMap<String, PImage> ImageList_City1;
 HashMap<String, PImage> ImageList_City2;
 PImage Image_nonCity;
 
+void settings() {
+  size(FIELD_LENGTH_X, FIELD_LENGTH_Y, P2D);
+}
 void setup() {
 
-  size(800, 600, P2D);
   noStroke();
   frameRate(60);
 
@@ -43,18 +45,18 @@ void init(){
 
 
    //画像
-   ImageList_Area = new HashMap<String, PImage>();
+   ImageList_Area = new HashMap<AreaType, PImage>();
    ImageList_Number = new HashMap<String, PImage>();
    ImageList_City1 = new HashMap<String, PImage>();
    ImageList_City2 = new HashMap<String, PImage>();
 
   //画像読み込み
-  ImageList_Area.put("Desert"   ,loadImage("img/area/Desert.png"));
-  ImageList_Area.put("Fields"   ,loadImage("img/area/Fields.png"));
-  ImageList_Area.put("Forest"   ,loadImage("img/area/Forest.png"));
-  ImageList_Area.put("Mountains",loadImage("img/area/Mountains.png"));
-  ImageList_Area.put("Pasture"  ,loadImage("img/area/Pasture.png"));
-  ImageList_Area.put("Hills"    ,loadImage("img/area/Hills.png"));
+  ImageList_Area.put(AreaType.Desert   ,loadImage("img/area/Desert.png"));
+  ImageList_Area.put(AreaType.Fields   ,loadImage("img/area/Fields.png"));
+  ImageList_Area.put(AreaType.Forest   ,loadImage("img/area/Forest.png"));
+  ImageList_Area.put(AreaType.Mountains,loadImage("img/area/Mountains.png"));
+  ImageList_Area.put(AreaType.Pasture  ,loadImage("img/area/Pasture.png"));
+  ImageList_Area.put(AreaType.Hills    ,loadImage("img/area/Hills.png"));
 
   ImageList_Number.put("2"   ,loadImage("img/number/2.png"));
   ImageList_Number.put("3"   ,loadImage("img/number/3.png"));
