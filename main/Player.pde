@@ -5,6 +5,7 @@ class PlayerStateMachine extends StateChanger{
   int listIndex = 0;//どの子を選択しようとしているのかというindex
   String MyName;//自分の名前
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
+  HashMap<MaterialType, Integer> material = new HashMap<MaterialType, Integer>();//資材を管理するやつ
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
   public PlayerStateMachine(String tmp_MyName){
@@ -15,6 +16,11 @@ class PlayerStateMachine extends StateChanger{
     CardAdd("card2");
     CardAdd("card3");
     CardAdd("card4");
+
+    //資材の初期化
+    for (MaterialType m : MaterialType.values()) {
+      material.put(m,0);
+    }
 
 
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
@@ -38,6 +44,11 @@ class PlayerStateMachine extends StateChanger{
   //カードリストを返す
   public List<String> GetCardList(){
     return cardList;
+  }
+  //資材を追加する(資材の種類, 追加する個数)
+  public AddMaterial(MaterialType m, int num){
+    int tmp = material.get(m);
+    material.put(m, tmp+num);
   }
 
 
@@ -70,8 +81,8 @@ class PlayerStateMachine extends StateChanger{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    textSize(25);
-    text(MyName +"  "+ childList.get(listIndex), 50, 50);
+    textSize(20);
+    text(MyName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
     mCurrentState.Render();//子の呼び出し
   };
   public void OnEnter(){};
@@ -92,7 +103,8 @@ class Dice extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("Dice", 100, 100);
+    textSize(20);
+    text("Dice", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
   };
   public void OnEnter(){};
   public void OnExit(){};
@@ -119,9 +131,10 @@ class ChoiceCard extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("choiseCard", 100, 100);
+    textSize(20);
+    text("choiseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
     for(int i=0;i<cardList.size();i++){
-       text(cardList.get(i), 200, 100 + 50*(i+1));
+       text(cardList.get(i), FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180 + 20*(i+1));
     }
   };
   public void OnEnter(){
@@ -147,7 +160,8 @@ class TradeWithOther extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("TradeWithOther", 100, 100);
+    textSize(20);
+    text("TradeWithOther", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
@@ -169,7 +183,8 @@ class UseCard extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("UseCard", 100, 100);
+    textSize(20);
+    text("UseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
@@ -192,7 +207,8 @@ class Development extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("Development", 100, 100);
+    textSize(20);
+    text("Development", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};

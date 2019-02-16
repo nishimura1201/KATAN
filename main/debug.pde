@@ -49,10 +49,10 @@ class Debug implements IState{
   public void Render(){
     fill(50, 50, 50, 255);
     textSize(20);
-    text("DebugMode", 10, 40);
+    text("DebugMode", FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 180);
     switch(whichSetting){
-      case 0:text("Edge", 150, 40);break;
-      case 1:text("Node", 150, 40);break;
+      case 0:text("Edge", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      case 1:text("Node", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
     }
     //エッジの太描き
     fieldInfomation.Debug_Render();
@@ -62,13 +62,13 @@ class Debug implements IState{
       //エッジの所有者の設定
       case 0:
         //変数の表示
-        text("targetEdge:"+targetEdge, 50, 100);
-        text("targetHolder:"+targetHolder, 50, 150);
+        text("targetEdge:"+targetEdge, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        text("targetHolder:"+targetHolder, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 130);
         //選択しているエッジの強調描画
         stroke( 200, 200, 200 );
         strokeWeight( 10 );
         pushMatrix();
-        translate(500, 300);
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
         fieldInfomation.drawEdge(targetEdge);
         popMatrix();
         break;
@@ -76,27 +76,27 @@ class Debug implements IState{
       //ノードの所有者の設定
       case 1:
         //変数の表示
-        text("targetNode:"+targetNode, 50, 100);
-        text("targetHolder:"+targetHolder, 50, 150);
-        text("targetCityLevel:"+targetCityLevel, 50, 200);
+        text("targetNode:"+targetNode, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        text("targetHolder:"+targetHolder, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 130);
+        text("targetCityLevel:"+targetCityLevel, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 110);
         stroke( 200, 200, 200 );
         strokeWeight( 10 );
         pushMatrix();
-        translate(500, 300);
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
         fieldInfomation.drawNode(targetNode);
         popMatrix();
         break;
     }
 
     //説明書き
-    textSize(15);
-    fill(0, 0, 0);//HSB
-    text("s:Change element of setting", 10, 300);
-    text("RIGHT:targetEdge+=1", 10, 320);
-    text("LEFT:targetEdge-=1", 10, 340);
-    text("UP:targetHolder+=1", 10, 360);
-    text("DOWN:targetEdge(Node)+=10", 10, 380);
-    text("l:cityLevel+=1(Node only)", 10, 400);
+    fill(50, 50, 50, 255);
+    textSize(20);
+    text("s:Change element of setting", 300, FIELD_LENGTH_Y-100 - 20);
+    text("RIGHT:targetEdge+=1", 300, FIELD_LENGTH_Y-100 + 0);
+    text("LEFT:targetEdge-=1", 300, FIELD_LENGTH_Y-100 + 20);
+    text("UP:targetHolder+=1", 300, FIELD_LENGTH_Y-100 + 40);
+    text("DOWN:targetEdge(Node)+=10", 300, FIELD_LENGTH_Y-100 + 60);
+    text("l:cityLevel+=1(Node only)", 300, FIELD_LENGTH_Y-100 + 80);
 
   }
 

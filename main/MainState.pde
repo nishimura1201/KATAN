@@ -54,6 +54,13 @@ class MainStateMachine extends StateChanger{
 
     public void Render(){
         mCurrentState.Render();
+        fill(50, 50, 50, 255);
+        textSize(20);
+        text("D         :debug mode", 10, FIELD_LENGTH_Y-100 + 0);
+        text("A         :change player", 10, FIELD_LENGTH_Y-100 + 20);
+        text("Z         :change motion", 10, FIELD_LENGTH_Y-100 + 40);
+        text("ENTER     :choice motion", 10, FIELD_LENGTH_Y-100 + 60);
+        text("BACK SPACE:back to player", 10, FIELD_LENGTH_Y-100 + 80);
     }
 }
 

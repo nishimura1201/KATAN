@@ -32,15 +32,17 @@ FieldInfomation fieldInfomation;
 
 
 //画像
-HashMap<String, PImage> ImageList_Area;
+HashMap<AreaType, PImage> ImageList_Area;
 HashMap<String, PImage> ImageList_Number;
 HashMap<String, PImage> ImageList_City1;
 HashMap<String, PImage> ImageList_City2;
 PImage Image_nonCity;
 
+public void settings() {
+  size(FIELD_LENGTH_X, FIELD_LENGTH_Y, P2D);
+}
 public void setup() {
 
-  
   noStroke();
   frameRate(60);
 
@@ -63,18 +65,18 @@ public void init(){
 
 
    //画像
-   ImageList_Area = new HashMap<String, PImage>();
+   ImageList_Area = new HashMap<AreaType, PImage>();
    ImageList_Number = new HashMap<String, PImage>();
    ImageList_City1 = new HashMap<String, PImage>();
    ImageList_City2 = new HashMap<String, PImage>();
 
   //画像読み込み
-  ImageList_Area.put("Desert"   ,loadImage("img/area/Desert.png"));
-  ImageList_Area.put("Fields"   ,loadImage("img/area/Fields.png"));
-  ImageList_Area.put("Forest"   ,loadImage("img/area/Forest.png"));
-  ImageList_Area.put("Mountains",loadImage("img/area/Mountains.png"));
-  ImageList_Area.put("Pasture"  ,loadImage("img/area/Pasture.png"));
-  ImageList_Area.put("Hills"    ,loadImage("img/area/Hills.png"));
+  ImageList_Area.put(AreaType.Desert   ,loadImage("img/area/Desert.png"));
+  ImageList_Area.put(AreaType.Fields   ,loadImage("img/area/Fields.png"));
+  ImageList_Area.put(AreaType.Forest   ,loadImage("img/area/Forest.png"));
+  ImageList_Area.put(AreaType.Mountains,loadImage("img/area/Mountains.png"));
+  ImageList_Area.put(AreaType.Pasture  ,loadImage("img/area/Pasture.png"));
+  ImageList_Area.put(AreaType.Hills    ,loadImage("img/area/Hills.png"));
 
   ImageList_Number.put("2"   ,loadImage("img/number/2.png"));
   ImageList_Number.put("3"   ,loadImage("img/number/3.png"));
@@ -170,6 +172,13 @@ class MainStateMachine extends StateChanger{
 
     public void Render(){
         mCurrentState.Render();
+        fill(50, 50, 50, 255);
+        textSize(20);
+        text("D         :debug mode", 10, FIELD_LENGTH_Y-100 + 0);
+        text("A         :change player", 10, FIELD_LENGTH_Y-100 + 20);
+        text("Z         :change motion", 10, FIELD_LENGTH_Y-100 + 40);
+        text("ENTER     :choice motion", 10, FIELD_LENGTH_Y-100 + 60);
+        text("BACK SPACE:back to player", 10, FIELD_LENGTH_Y-100 + 80);
     }
 }
 
@@ -255,6 +264,12 @@ public static final int CITY_LENGTH = 50;
 //ホールドナンバーの半径
 public static final int AREA_HOLDNUMBER_LENGTH = 40;
 
+//フィールドの大きさ
+public static final int FIELD_LENGTH_X = 1100;
+public static final int FIELD_LENGTH_Y = 800;
+//フィールドを書く位置
+public static final int FIELD_POSITION_X = 800;
+public static final int FIELD_POSITION_Y = 250;
 
 //エリアの種類
 enum AreaType{
@@ -266,6 +281,16 @@ enum AreaType{
   Grassland,
   Desert
 }
+
+//資材の種類
+enum Material{
+  Brick,
+  Lumber,
+  Wool,
+  Grain,
+  Iron
+}
+
 //プレイヤー関数が持つ選択肢の種類
 enum PlayerSelectable{
   dice("dice"),
@@ -289,6 +314,7 @@ class PlayerStateMachine extends StateChanger{
   int listIndex = 0;//どの子を選択しようとしているのかというindex
   String MyName;//自分の名前
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
+  HashMap<Material, Integer> material = new HashMap<Material, Integer>();//資材を管理するやつ
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
   public PlayerStateMachine(String tmp_MyName){
@@ -299,6 +325,11 @@ class PlayerStateMachine extends StateChanger{
     CardAdd("card2");
     CardAdd("card3");
     CardAdd("card4");
+
+    //資材の初期化
+    for (Material m : Material.values()) {
+      material.put(m,0);
+    }
 
 
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
@@ -354,8 +385,8 @@ class PlayerStateMachine extends StateChanger{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    textSize(25);
-    text(MyName +"  "+ childList.get(listIndex), 50, 50);
+    textSize(20);
+    text(MyName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
     mCurrentState.Render();//子の呼び出し
   };
   public void OnEnter(){};
@@ -376,7 +407,8 @@ class Dice extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("Dice", 100, 100);
+    textSize(20);
+    text("Dice", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
   };
   public void OnEnter(){};
   public void OnExit(){};
@@ -403,9 +435,10 @@ class ChoiceCard extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("choiseCard", 100, 100);
+    textSize(20);
+    text("choiseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
     for(int i=0;i<cardList.size();i++){
-       text(cardList.get(i), 200, 100 + 50*(i+1));
+       text(cardList.get(i), FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180 + 20*(i+1));
     }
   };
   public void OnEnter(){
@@ -431,7 +464,8 @@ class TradeWithOther extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("TradeWithOther", 100, 100);
+    textSize(20);
+    text("TradeWithOther", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
@@ -453,7 +487,8 @@ class UseCard extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("UseCard", 100, 100);
+    textSize(20);
+    text("UseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
@@ -476,7 +511,8 @@ class Development extends PlayerActionBase{
   };
   public void Render(){
     fill(50, 50, 50, 255);
-    text("Development", 100, 100);
+    textSize(20);
+    text("Development", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
   };
   public void OnEnter(){};
@@ -533,10 +569,10 @@ class Debug implements IState{
   public void Render(){
     fill(50, 50, 50, 255);
     textSize(20);
-    text("DebugMode", 10, 40);
+    text("DebugMode", FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 180);
     switch(whichSetting){
-      case 0:text("Edge", 150, 40);break;
-      case 1:text("Node", 150, 40);break;
+      case 0:text("Edge", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      case 1:text("Node", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
     }
     //エッジの太描き
     fieldInfomation.Debug_Render();
@@ -546,13 +582,13 @@ class Debug implements IState{
       //エッジの所有者の設定
       case 0:
         //変数の表示
-        text("targetEdge:"+targetEdge, 50, 100);
-        text("targetHolder:"+targetHolder, 50, 150);
+        text("targetEdge:"+targetEdge, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        text("targetHolder:"+targetHolder, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 130);
         //選択しているエッジの強調描画
         stroke( 200, 200, 200 );
         strokeWeight( 10 );
         pushMatrix();
-        translate(500, 300);
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
         fieldInfomation.drawEdge(targetEdge);
         popMatrix();
         break;
@@ -560,27 +596,27 @@ class Debug implements IState{
       //ノードの所有者の設定
       case 1:
         //変数の表示
-        text("targetNode:"+targetNode, 50, 100);
-        text("targetHolder:"+targetHolder, 50, 150);
-        text("targetCityLevel:"+targetCityLevel, 50, 200);
+        text("targetNode:"+targetNode, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        text("targetHolder:"+targetHolder, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 130);
+        text("targetCityLevel:"+targetCityLevel, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 110);
         stroke( 200, 200, 200 );
         strokeWeight( 10 );
         pushMatrix();
-        translate(500, 300);
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
         fieldInfomation.drawNode(targetNode);
         popMatrix();
         break;
     }
 
     //説明書き
-    textSize(15);
-    fill(0, 0, 0);//HSB
-    text("s:Change element of setting", 10, 300);
-    text("RIGHT:targetEdge+=1", 10, 320);
-    text("LEFT:targetEdge-=1", 10, 340);
-    text("UP:targetHolder+=1", 10, 360);
-    text("DOWN:targetEdge(Node)+=10", 10, 380);
-    text("l:cityLevel+=1(Node only)", 10, 400);
+    fill(50, 50, 50, 255);
+    textSize(20);
+    text("s:Change element of setting", 300, FIELD_LENGTH_Y-100 - 20);
+    text("RIGHT:targetEdge+=1", 300, FIELD_LENGTH_Y-100 + 0);
+    text("LEFT:targetEdge-=1", 300, FIELD_LENGTH_Y-100 + 20);
+    text("UP:targetHolder+=1", 300, FIELD_LENGTH_Y-100 + 40);
+    text("DOWN:targetEdge(Node)+=10", 300, FIELD_LENGTH_Y-100 + 60);
+    text("l:cityLevel+=1(Node only)", 300, FIELD_LENGTH_Y-100 + 80);
 
   }
 
@@ -1010,7 +1046,7 @@ public class FieldInfomation{
 
     public void Render(){
       pushMatrix();
-      translate(500, 300);
+      translate(FIELD_POSITION_X, FIELD_POSITION_Y);
       float x,y;
       int holder, cityLevel;
 
@@ -1026,11 +1062,11 @@ public class FieldInfomation{
       }
 
       //エッジの所有者を表示
-      strokeWeight( 5 );
+
       for(int i=0;i<EdgeNum;i++){
         holder = edge[i].holder;
-        if(holder == 0)stroke( 0, 0, 20 );
-        else stroke( 150/PLAYER_NUMBER * holder+50, 200, 200 );
+        if(holder == 0){      strokeWeight( 5 );stroke( 0, 0, 40 );}
+        else{     strokeWeight( 10 );stroke(150/PLAYER_NUMBER * holder+50, 200, 200 );};
         drawEdge(i);
       }
 
@@ -1196,29 +1232,7 @@ class Area{
 //エリアを描画.今は色の設定だけ.
 public void DrawArea(AreaType type){
   int tmp = AREA_LENGTH;
-  switch(type){
-    case Hills:
-      image(ImageList_Area.get("Hills"),0,0,tmp,tmp);
-      break;
-    case Pasture:
-      image(ImageList_Area.get("Pasture"),0,0,tmp,tmp);
-      break;
-    case Mountains:
-      image(ImageList_Area.get("Mountains"),0,0,tmp,tmp);
-      break;
-    case Forest:
-      image(ImageList_Area.get("Forest"),0,0,tmp,tmp);
-      break;
-    case Fields:
-      image(ImageList_Area.get("Fields"),0,0,tmp,tmp);
-      break;
-    case Grassland:
-      image(ImageList_Area.get("Grassland"),0,0,tmp,tmp);
-      break;
-    case Desert:
-      image(ImageList_Area.get("Desert"),0,0,tmp,tmp);
-      break;
-    }
+  image(ImageList_Area.get(type),0,0,tmp,tmp);
 }
 
 //都市を描画.今は色の設定だけ.
@@ -1277,7 +1291,6 @@ public void DrawAreaHoldNumber(int holdNumber){
       break;
     }
 }
-  public void settings() {  size(800, 600, P2D); }
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "main" };
     if (passedArgs != null) {
