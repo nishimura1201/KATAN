@@ -93,3 +93,14 @@ enum PlayerSelectable{
     return this.text;
   }
 }
+
+//----------------------------------------
+//関数間でやり取りするための変数群,共有変数的な立ち位置
+
+//Playerステートマシンで使うための共有変数群
+public static class Parameter_Player{
+  //GetMaterial_FromDiceで使う変数
+  public static String resultSTR;
+  public static int diceNumber;
+  public static int playerNumber;
+}

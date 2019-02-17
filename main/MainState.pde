@@ -9,9 +9,9 @@ class MainStateMachine extends StateChanger{
     public MainStateMachine(){
       super();
 
-      Add("player1",new PlayerStateMachine( "player1"));
-      Add("player2",new PlayerStateMachine( "player2"));
-      Add("player3",new PlayerStateMachine( "player3"));
+      Add("player1",new PlayerStateMachine( "player1", 0));
+      Add("player2",new PlayerStateMachine( "player2", 1));
+      Add("player3",new PlayerStateMachine( "player3", 2));
       Add("debug",new Debug());
       //プレイヤーのターン順序
       orderPlayerName[0] = "player1";

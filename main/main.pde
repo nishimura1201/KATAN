@@ -10,6 +10,8 @@ MainStateMachine mainStateMachine;
 KeyPushJudge keyPushJudge;
 FieldInfomation fieldInfomation;
 
+//メッセージボックス
+MessageBox messageBox;
 
 //画像
 HashMap<AreaType, PImage> ImageList_Area;
@@ -42,6 +44,8 @@ void init(){
    fieldInfomation = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
    keyPushJudge = new KeyPushJudge();
+
+   messageBox = new MessageBox();
 
 
    //画像
@@ -93,6 +97,8 @@ void draw() {
 
   fieldInfomation.Render();
   mainStateMachine.Render();
+
+  messageBox.Render();
 
 
 }

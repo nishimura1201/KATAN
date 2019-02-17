@@ -154,7 +154,50 @@ void mousePressed() {
   mouseClickTorF = MOUSE_CLICK;
 }
 
-//debugのための関数を使用するためのSAMインターフェイス
-public interface AddMaterial{
-    public abstract void AddMaterial(MaterialType m, int num);
+//枠の表示
+void DrawRect(int leftUP, int leftDown,int width, int height){
+  stroke(100,50,50);
+  fill(255);
+  strokeWeight(2);
+  rect(leftUP, leftDown, width, height);
+}
+
+public class MessageBox{
+  String message1;
+  String message2;
+  int messageBox_X = 500;
+  int messageBox_Y = 70;
+
+  //コンストラクタ
+  MessageBox(){
+    message1 = "";
+    message2 = "";
+  }
+
+  void Render(){
+    pushMatrix();
+    translate(30,400);
+
+    DrawRect(0, 0, messageBox_X, messageBox_Y);
+    DrawRect(4, 4, messageBox_X-8, messageBox_Y-8);
+
+    textSize(20);
+    fill(50, 50, 50, 255);
+    text(message1, 20, 25);
+    text(message2, 20, 55);
+
+    popMatrix();
+  }
+
+  void MessageON(String tmp1, String tmp2){
+    message1 = tmp1;
+    message2 = tmp2;
+  }
+
+  void MessageOFF(){
+    message1 = "";
+    message2 = "";
+  }
+
+
 }

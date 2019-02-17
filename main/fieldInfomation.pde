@@ -234,7 +234,6 @@ public class FieldInfomation{
       }
 
       //エッジの所有者を表示
-
       for(int i=0;i<EdgeNum;i++){
         holder = edge[i].holder;
         if(holder == 0){      strokeWeight( 5 );stroke( 0, 0, 40 );}
@@ -293,6 +292,11 @@ public class FieldInfomation{
     void SetNodeOwner(int nodeNumber, int holder, int cityLevel){
       if(holder == 0)cityLevel=0;//所有者がいないならcityLevelは0にしとく
       node[nodeNumber].SetHolder_and_Level(holder, cityLevel);
+    }
+
+    //ダイスの数・プレイヤー番号・エリアの種類をもとに、いくつ資材が得られるかを返す
+    int DiceReturnMaterial(int diceNumber, int playerNumber, MaterialType materialType){
+      return 1;
     }
 }
 

@@ -3,15 +3,20 @@
 //プレイヤーのアクションを管理するステートマシン
 class PlayerStateMachine extends StateChanger{
   int listIndex = 0;//どの子を選択しようとしているのかというindex
-  String MyName;//自分の名前
+  String myName;//自分の名前
+  int myNumber;//自分の番号、プレイヤー番号
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
   HashMap<MaterialType, Integer> material = new HashMap<MaterialType, Integer>();//資材を管理するやつ
-  int parameterRectSizeX = 300;//パラメータ表示の枠サイズX
-  int parameterRectSizeY = 400;//パラメータ表示の枠サイズY
-  //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
-  public PlayerStateMachine(String tmp_MyName){
+  int parameterRectSizeX = 200;//パラメータ表示の枠サイズX
+  int parameterRectSizeY = 180;//パラメータ表示の枠サイズY
+  int actionChoicesRectSizeX = 180;//行動選択表示の枠サイズX
+  int actionChoicesRectSizeY = 150;//行動選択表示の枠サイズY
 
-    MyName = tmp_MyName;
+  //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
+  public PlayerStateMachine(String tmp_myName,int tmp_myNumber){
+
+    myName = tmp_myName;
+    myNumber = tmp_myNumber;
 
     CardAdd("card1");
     CardAdd("card2");
@@ -23,11 +28,12 @@ class PlayerStateMachine extends StateChanger{
       material.put(m,0);
     }
 
+    //順番大事
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
+    Add(PlayerSelectable.development.getString()    ,new Development(this));
     Add(PlayerSelectable.choiceCard.getString()     ,new ChoiceCard(this));
     Add(PlayerSelectable.tradeWithOther.getString() ,new TradeWithOther(this));
-    Add(PlayerSelectable.useCard.getString()        ,new UseCard(this));
-    Add(PlayerSelectable.development.getString()    ,new Development(this));
+    //Add(PlayerSelectable.useCard.getString()        ,new UseCard(this));
 
   }
 
@@ -51,6 +57,31 @@ class PlayerStateMachine extends StateChanger{
     material.put(m, tmp+num);
   }
 
+  //ダイスの目から、自分の所有する開拓地に合わせた資材をゲット
+  //結果はStringにまとめて戻すように
+  public void GetMaterial_FromDice(){
+    //fieldInfomationにアクセスして、自分の開拓地の周辺にある資材を返してもらう
+    //引数をエリアの種類とプレイヤーの番号に、返り値を取得した個数にする
+    int result;//戻り値の箱
+    String str = "";
+    for(MaterialType m :MaterialType.values()){
+      result = fieldInfomation.DiceReturnMaterial(Parameter_Player.diceNumber,
+                                                  Parameter_Player.playerNumber,
+                                                  m);
+      AddMaterial(m,result);
+      if(result > 0){
+        str += m.getName();
+        str += ":";
+        str += result;
+        str += ", ";
+      }
+    }
+    Parameter_Player.resultSTR = str;
+    //タイプと個数をもとにAddMaterialで保持数の更新
+    //Parameter_Player.resultSTR = Integer.toString(Parameter_Player.diceNumber);
+    //取得した資材の結果をSringにまとめる
+  }
+
   public String Update(int elapsedTime){
     //子に主導権が移ってるならここでの操作は行わんようにっていうやつ
     if(childOn == true){
@@ -62,10 +93,10 @@ class PlayerStateMachine extends StateChanger{
       }
     }else{
       //次のプレイヤーに所有権を移す
-      if(keyPushJudge.GetJudge("a") == true){
+      if(keyPushJudge.GetJudge("RIGHT") == true){
         return "ChangePlayer";
       }
-      if(keyPushJudge.GetJudge("z") == true){
+      if(keyPushJudge.GetJudge("DOWN") == true){
         listIndex++;
         if(childList.size() == listIndex)listIndex = 0;
       }
@@ -81,11 +112,34 @@ class PlayerStateMachine extends StateChanger{
     //デバッグ用に今選択くしている行動を画面右下に表示
     fill(50, 50, 50, 255);
     textSize(20);
-    text(MyName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
+    text(myName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
 
+    ActionChoicesRender();//行動選択の表示
     ParameterRender();//パラメータの表示
     mCurrentState.Render();//子の呼び出し
   };
+
+  //選択肢の表示
+  public void ActionChoicesRender(){
+    //選択肢の表示
+    pushMatrix();
+    translate(30,80);
+    {
+      //枠の表示
+      DrawRect(0, 0, actionChoicesRectSizeX, actionChoicesRectSizeY);
+      DrawRect(4, 4, actionChoicesRectSizeX-8, actionChoicesRectSizeY-8);
+
+      //選択肢の表示
+      textSize(30);
+      fill(50, 50, 50, 255);
+      text("->", 10, 40 + 30*listIndex);
+      text("Dice", 50, 40);
+      text("Develop", 50, 70);
+      text("Card", 50, 100);
+      text("Trade", 50, 130);
+    }
+    popMatrix();
+  }
 
   //パラメータの表示
   public void ParameterRender(){
@@ -93,23 +147,28 @@ class PlayerStateMachine extends StateChanger{
 
     //名前の表示
     textSize(30);
-    text(MyName, 50, 30);
+    text(myName, 50, 30);
 
-    //枠の表示
-    stroke(100,50,50);
-    noFill();
-    strokeWeight(2);
-    rect(50, 50, parameterRectSizeX, parameterRectSizeY);
-    rect(50+4, 50+4, parameterRectSizeX-8, parameterRectSizeY-8);
+    //資材の表示
+    pushMatrix();
+    translate(300,80);
+    {
+      //枠の表示
+      DrawRect(0, 0, parameterRectSizeX, parameterRectSizeY);
+      DrawRect(4, 4, parameterRectSizeX-8, parameterRectSizeY-8);
 
-    //パラメータの表示
-    textSize(30);
-    text("Brick     :"+material.get(MaterialType.Brick), 60, 85);
-    text("Lumber :"+material.get(MaterialType.Lumber), 60, 115);
-    text("Wool     :"+material.get(MaterialType.Wool), 60, 145);
-    text("Grain    :"+material.get(MaterialType.Grain), 60, 175);
-    text("Iron       :"+material.get(MaterialType.Iron), 60, 205);
+      //パラメータの表示
+      textSize(30);
+      fill(50, 50, 50, 255);
+      text("Brick     :"+material.get(MaterialType.Brick), 10, 40);
+      text("Lumber :"+material.get(MaterialType.Lumber), 10, 70);
+      text("Wool     :"+material.get(MaterialType.Wool), 10, 100);
+      text("Grain    :"+material.get(MaterialType.Grain), 10, 130);
+      text("Iron       :"+material.get(MaterialType.Iron), 10, 160);
+    }
+    popMatrix();
   }
+
   public void MessageOrder(String message){
     switch(message){
       //デバッグ用のAddMaterialをキックする
@@ -118,6 +177,9 @@ class PlayerStateMachine extends StateChanger{
         break;
       case "ParameterRender":
         ParameterRender();
+        break;
+      case "GetMaterial_FromDice":
+        GetMaterial_FromDice();
         break;
     }
   };
@@ -128,6 +190,10 @@ class PlayerStateMachine extends StateChanger{
 
 //サイコロを振る
 class Dice extends PlayerActionBase{
+  String m_state = "YESorNO";//簡易に状態を管理する
+  int diceNumber = 0;//振って出たダイスの合計値
+  int targetPlayer = -1;//メッセージウィンドウの進捗を管理,最初に++したいから-1から始める
+
   //コンストラクタ
   public Dice(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
@@ -135,15 +201,83 @@ class Dice extends PlayerActionBase{
   }
 
   public String Update(int elapsedTime){
-    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    switch(m_state){
+      //本当にダイスwp振るかどうかの確認
+      case "YESorNO":
+        //BACKSPACEで一つ戻る
+        if(PlayerStateMachineChildOFF() == "ChildOFF"){
+          return "ChildOFF";
+        }
+        //ENTERで決定
+        if(keyPushJudge.GetJudge("ENTER")){
+          diceNumber = int(random(1,7)) + int(random(1,7));
+          Parameter_Player.diceNumber = diceNumber;
+          messageBox.MessageON("dice sum-->" + Integer.toString(diceNumber), "");
+          m_state = "Distribution";
+
+        }
+        break;
+
+      //ダイスの目に応じて資材の分配
+      case "Distribution":
+        //ENTER押すごとに,プレイヤーに資材の分配と成果の表示を行う
+        String tmpStr = "";
+        if(keyPushJudge.GetJudge("ENTER")){
+          targetPlayer++;
+          if(targetPlayer == PLAYER_NUMBER)return "ChildOFF";
+        
+          Parameter_Player.playerNumber = targetPlayer;//プレイヤー番号の設定
+
+          //プレイヤーごとに資材の分配の計算と更新
+          String playerName = mainStateMachine.orderPlayerName[targetPlayer];//プレイヤーの名前
+          IState tmpPSM = mainStateMachine.mStates.get(playerName);//対象プレイヤーのステートマシン
+          tmpPSM.MessageOrder("GetMaterial_FromDice");//ダイスの合計値から資源の取得
+
+          messageBox.MessageON("dice sum-->" + Integer.toString(diceNumber), mainStateMachine.orderPlayerName[targetPlayer] +":"+ Parameter_Player.resultSTR);
+
+        }
+
+//        return "ChildOFF";
+        return "null";
+
+      default:
+        break;
+    }
+
+
+    return "null";
   };
   public void Render(){
+    //DIceと表示する
     fill(50, 50, 50, 255);
     textSize(20);
     text("Dice", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
+    textSize(30);
+    text("Dice",200, 30);
+
+    //ステートに応じた表示
+    switch(m_state){
+      //本当にダイスwp振るかどうかの確認
+      case "YESorNO":
+        break;
+
+      //ダイスの目に応じて資材の分配
+      case "Distribution":
+        break;
+
+      default:
+        break;
+    }
   };
-  public void OnEnter(){};
-  public void OnExit(){};
+  public void OnEnter(){
+    m_state = "YESorNO";
+    diceNumber = 0;
+    targetPlayer = -1;//最初に++したいから-1から始める
+    messageBox.MessageON("roll dice?(ENTER or BACKSPACE)","");
+  };
+  public void OnExit(){
+    messageBox.MessageOFF();
+  };
 }
 
 //カードを選択する
