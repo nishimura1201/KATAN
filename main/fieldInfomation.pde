@@ -294,9 +294,85 @@ public class FieldInfomation{
       node[nodeNumber].SetHolder_and_Level(holder, cityLevel);
     }
 
+    //街道の開発
+    void BuildEdge(int edgeNumber, int holder){
+      edge[edgeNumber].SetHolder(holder);
+    }
+
+    //都市の開発、もしくは町の開発
+    void BuildNode(int nodeNumber, int holder){
+      //例外処理
+      if( node[nodeNumber].JudgeDevelopable(holder, nodeNumber) == false )
+        println("FieldInfomation -> BuildNode\n");
+
+      if( node[nodeNumber].cityLevel == 0 )
+        node[nodeNumber].BuildVillage(holder);
+      else
+        node[nodeNumber].Develop();
+    }
+
+    //指定されたエッジに街道を作れるのかどうか判断
+    boolean Edge_JudgeDevelopable(int target, int holder){
+      boolean TorF = true;
+      //既に街道が建設されていないかの確認
+      TorF &= edge[target].JudgeDevelopable();
+      //街道を作ろうとしているエッジの隣に都市・町があるのかどうか
+      //ない場合にのみ、街道だけで連結しているか確認する
+      if( Edge_ExistNextNode(target ,holder) == false ){
+        TorF &= Edge_ExistLinkedLoad(target, holder);
+      }
+
+      return TorF;
+    }
+
+    //指定されたエッジの隣に同じ保有者の街道が存在するかどうか
+    boolean Edge_ExistLinkedLoad(int target, int holder){
+      for(int number : edge[target].nextEdgeNumber){
+        if( edge[number].holder == holder )
+          return true;
+      }
+      return false;
+    }
+    //対象となるエッジの隣に町・都市があるかどうかの確認
+    boolean Edge_ExistNextNode(int target, int holder){
+      //周りにあるノード番号を取得し、そこに町・都市があるかを確認
+      for(int number : edge[target].nextNodeNumber){
+        if( node[number].holder == holder )
+          if( node[number].cityLevel > 0 ){
+            return true;
+          }else{
+            println("FieldInfomation -> Edge_ExistNextNode     unexpected alert");
+          }
+      }
+      return false;
+    }
+
+    //指定された位置に町を作れるのかどうか判断
+    boolean Node_JudgeDevelopable(int holder, int target){
+      //★★★近くに町がないかどうか調べる機能の追加
+      return node[target].JudgeDevelopable(holder, target);
+    }
+
     //ダイスの数・プレイヤー番号・エリアの種類をもとに、いくつ資材が得られるかを返す
     int DiceReturnMaterial(int diceNumber, int playerNumber, MaterialType materialType){
-      return 1;
+      int resultMaterialNum = 0;//最終的にreturnする資材の数
+
+      //for文で全ノードを参照する
+      for(int i=0; i<NodeNum; i++){
+        //ifでノード（都市）の所有者がプレイヤー番号と一致するか確認
+        if(node[i].holder == playerNumber){
+          //for文でノードの周りにあるエリアを参照する
+          for(int j : node[i].nextAreaNumber){
+            //ifでエリアの番号がダイス番号と一致するか、かつ、対象のタイプか確認
+            if(area[j].holdNumber == diceNumber )
+              if(area[j].areaType.toMaterialType() == materialType)
+                resultMaterialNum += node[i].ReturnMaterialNumber();
+              //都市のレベルに従った資材の数をreturnする
+          }
+        }
+      }
+
+      return resultMaterialNum;
     }
 }
 
@@ -321,6 +397,14 @@ class Edge{
   public void SetHolder(int tmp_holder){
     holder = tmp_holder;
   }
+
+  //指定されたエッジに既に誰かが街道を作っていないかどうか判断する
+  boolean JudgeDevelopable(){
+    if( holder!=0 )return false;
+    return true;
+  }
+
+
   //隣り合うエッジの番号を格納させる
   public void AddNextEdgeNumber(int Number){
     nextEdgeNumber.add(Number);
@@ -368,6 +452,22 @@ class Node{
   public void SetHolder_and_Level(int tmp_holder, int tmp_level){
     holder = tmp_holder;
     cityLevel = tmp_level;
+  }
+
+  //保持している都市のレベルに従った資材の数をreturnする
+  public int ReturnMaterialNumber(){
+    if(cityLevel ==0)return 0;
+    if(cityLevel ==1)return 1;
+    if(cityLevel ==2)return 2;
+    println("Node.ReturnMaterialNumber--error\n");
+    return 0;
+  }
+
+  //developを行えるかどうか判断する関数
+  boolean JudgeDevelopable(int tmp_holder,int tmp_nodeNumber){
+    if( holder!=0 && holder != tmp_holder)return false;
+    if( cityLevel != 0 && cityLevel != 1  )return false;
+    return true;
   }
 
   //隣り合うエッジの番号を格納させる

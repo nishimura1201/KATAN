@@ -2,15 +2,15 @@
 
 //プレイヤーのアクションを管理するステートマシン
 class PlayerStateMachine extends StateChanger{
-  int listIndex = 0;//どの子を選択しようとしているのかというindex
+  int listIndex = 1;//どの子を選択しようとしているのかというindex,0はDiceやから1からスタート
   String myName;//自分の名前
-  int myNumber;//自分の番号、プレイヤー番号
+  int myNumber;//自分の番号、プレイヤー番号,1以上の数値
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
   HashMap<MaterialType, Integer> material = new HashMap<MaterialType, Integer>();//資材を管理するやつ
   int parameterRectSizeX = 200;//パラメータ表示の枠サイズX
   int parameterRectSizeY = 180;//パラメータ表示の枠サイズY
-  int actionChoicesRectSizeX = 180;//行動選択表示の枠サイズX
-  int actionChoicesRectSizeY = 150;//行動選択表示の枠サイズY
+  int actionChoosesRectSizeX = 180;//行動選択表示の枠サイズX
+  int actionChoosesRectSizeY = 150;//行動選択表示の枠サイズY
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
   public PlayerStateMachine(String tmp_myName,int tmp_myNumber){
@@ -25,14 +25,15 @@ class PlayerStateMachine extends StateChanger{
 
     //資材の初期化
     for (MaterialType m : MaterialType.values()) {
-      material.put(m,0);
+      material.put(m,10);
     }
 
     //順番大事
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
-    Add(PlayerSelectable.development.getString()    ,new Development(this));
-    Add(PlayerSelectable.choiceCard.getString()     ,new ChoiceCard(this));
+    Add(PlayerSelectable.development.getString()    ,new Development(this, myNumber));
+    Add(PlayerSelectable.chooseCard.getString()     ,new ChooseCard(this));
     Add(PlayerSelectable.tradeWithOther.getString() ,new TradeWithOther(this));
+    Add(PlayerSelectable.endTurn.getString()        ,new EndTurn(this));
     //Add(PlayerSelectable.useCard.getString()        ,new UseCard(this));
 
   }
@@ -66,7 +67,7 @@ class PlayerStateMachine extends StateChanger{
     String str = "";
     for(MaterialType m :MaterialType.values()){
       result = fieldInfomation.DiceReturnMaterial(Parameter_Player.diceNumber,
-                                                  Parameter_Player.playerNumber,
+                                                  Parameter_Player.playerNumber+1,//Nodeに登録されているプレイヤー番号に合わせる
                                                   m);
       AddMaterial(m,result);
       if(result > 0){
@@ -90,6 +91,9 @@ class PlayerStateMachine extends StateChanger{
         case "ChildOFF":
           ChildOFF();
           break;
+        case "ChangePlayer":
+          ChildOFF();
+          return "ChangePlayer";
       }
     }else{
       //次のプレイヤーに所有権を移す
@@ -98,7 +102,7 @@ class PlayerStateMachine extends StateChanger{
       }
       if(keyPushJudge.GetJudge("DOWN") == true){
         listIndex++;
-        if(childList.size() == listIndex)listIndex = 0;
+        if(childList.size() == listIndex)listIndex = 1;//0はダイスなので除いている
       }
       if(keyPushJudge.GetJudge("ENTER") == true){
         //println(childList.get(listIndex));
@@ -114,29 +118,30 @@ class PlayerStateMachine extends StateChanger{
     textSize(20);
     text(myName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
 
-    ActionChoicesRender();//行動選択の表示
+    ActionChoosesRender();//行動選択の表示
     ParameterRender();//パラメータの表示
     mCurrentState.Render();//子の呼び出し
   };
 
   //選択肢の表示
-  public void ActionChoicesRender(){
+  public void ActionChoosesRender(){
     //選択肢の表示
     pushMatrix();
     translate(30,80);
     {
       //枠の表示
-      DrawRect(0, 0, actionChoicesRectSizeX, actionChoicesRectSizeY);
-      DrawRect(4, 4, actionChoicesRectSizeX-8, actionChoicesRectSizeY-8);
+      DrawRect(0, 0, actionChoosesRectSizeX, actionChoosesRectSizeY);
+      DrawRect(4, 4, actionChoosesRectSizeX-8, actionChoosesRectSizeY-8);
 
       //選択肢の表示
       textSize(30);
       fill(50, 50, 50, 255);
-      text("->", 10, 40 + 30*listIndex);
-      text("Dice", 50, 40);
-      text("Develop", 50, 70);
-      text("Card", 50, 100);
-      text("Trade", 50, 130);
+      text("->", 10, 10 + 30*listIndex);
+      //text("Dice", 50, 40);
+      text("Develop", 50, 40);
+      text("Card", 50, 70);
+      text("Trade", 50, 100);
+      text("*END*", 50, 130);
     }
     popMatrix();
   }
@@ -183,7 +188,11 @@ class PlayerStateMachine extends StateChanger{
         break;
     }
   };
-  public void OnEnter(){};
+  public void OnEnter(){
+    //最初はダイスからなので0
+    listIndex = 1;
+    Change(childList.get(0));
+  };
   public void OnExit(){};
 }
 
@@ -204,17 +213,12 @@ class Dice extends PlayerActionBase{
     switch(m_state){
       //本当にダイスwp振るかどうかの確認
       case "YESorNO":
-        //BACKSPACEで一つ戻る
-        if(PlayerStateMachineChildOFF() == "ChildOFF"){
-          return "ChildOFF";
-        }
         //ENTERで決定
         if(keyPushJudge.GetJudge("ENTER")){
           diceNumber = int(random(1,7)) + int(random(1,7));
           Parameter_Player.diceNumber = diceNumber;
           messageBox.MessageON("dice sum-->" + Integer.toString(diceNumber), "");
           m_state = "Distribution";
-
         }
         break;
 
@@ -225,7 +229,7 @@ class Dice extends PlayerActionBase{
         if(keyPushJudge.GetJudge("ENTER")){
           targetPlayer++;
           if(targetPlayer == PLAYER_NUMBER)return "ChildOFF";
-        
+
           Parameter_Player.playerNumber = targetPlayer;//プレイヤー番号の設定
 
           //プレイヤーごとに資材の分配の計算と更新
@@ -237,7 +241,6 @@ class Dice extends PlayerActionBase{
 
         }
 
-//        return "ChildOFF";
         return "null";
 
       default:
@@ -273,7 +276,7 @@ class Dice extends PlayerActionBase{
     m_state = "YESorNO";
     diceNumber = 0;
     targetPlayer = -1;//最初に++したいから-1から始める
-    messageBox.MessageON("roll dice?(ENTER or BACKSPACE)","");
+    messageBox.MessageON(" roll dice?(ENTER or BACKSPACE)","");
   };
   public void OnExit(){
     messageBox.MessageOFF();
@@ -281,12 +284,12 @@ class Dice extends PlayerActionBase{
 }
 
 //カードを選択する
-class ChoiceCard extends PlayerActionBase{
+class ChooseCard extends PlayerActionBase{
   List<String> cardList;
   int cardIndex = 0;//カード選択のためのindex
 
   //コンストラクタ
-  public ChoiceCard(PlayerStateMachine tmp){
+  public ChooseCard(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
@@ -364,23 +367,177 @@ class UseCard extends PlayerActionBase{
 //開発
 class Development extends PlayerActionBase{
   //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
+  int targetEdge   = 0;//所有者を変更しようとするエッジの番号
+  int targetNode   = 0;//所有者を変更しようとするエッジの番号
+  int whichSetting = 0;//設定しようとしているのはどの要素か(0..エッジ,1..ノード)
+  int myNumber     = 0;//プレイヤーの固有番号
+  final static int KIND_OF_SETTING = 2;//設定できる要素の数
 
   //コンストラクタ
-  public Development(PlayerStateMachine tmp){
+  public Development(PlayerStateMachine tmp, int tmp_myNumber){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
+
+    myNumber = tmp_myNumber;
+  }
+
+  public String Update(int elapsedTime){
+
+    //設定する要素の選択
+    if(keyPushJudge.GetJudge("s")){
+      if(whichSetting == KIND_OF_SETTING-1)whichSetting = 0;
+      else whichSetting++;
+    }
+
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:developEdge();break;
+      //ノードの所有者の設定
+      case 1:developNode();break;
+      default:break;
+    }
+
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
+
+  };
+
+  public void Render(){
+    //今設定しようとしている要素名を表示
+    fill(50, 50, 50, 255);
+    textSize(20);
+    text("Development", FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 180);
+    switch(whichSetting){
+      case 0:text("Edge", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      case 1:text("Node", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      default:break;
+    }
+
+    //編集対象となるノード・エッジの表示
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:
+        //変数の表示
+        text("targetEdge:"+targetEdge, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        //選択しているエッジの強調描画
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
+        fieldInfomation.drawEdge(targetEdge);
+        popMatrix();
+        break;
+
+      //ノードの所有者の設定
+      case 1:
+        //変数の表示
+        text("targetNode:"+targetNode, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
+        fieldInfomation.drawNode(targetNode);
+        popMatrix();
+        break;
+    }
+  };
+  public void OnEnter(){
+    targetEdge   = 0;
+    targetNode   = 0;
+    whichSetting = 0;
+  };
+  public void OnExit(){};
+
+
+  //エッジの所有者の設定
+  public void developEdge(){
+    //右を押したらtargetEdgeを進めて、左を押したらtargetEdgeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで所有者の決定
+    if(keyPushJudge.GetJudge("RIGHT")){
+      do{
+        if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
+        else targetEdge++;
+      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      do{
+        if(targetEdge == 0)targetEdge=FieldInfomation.EdgeNum-1;
+        else targetEdge--;
+      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetEdge+10 > FieldInfomation.EdgeNum)targetEdge = 0;
+      else targetEdge+=10;
+      while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false ){
+        if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
+        else targetEdge++;
+      }
+    }else if(keyPushJudge.GetJudge("ENTER")){
+      //都市の開発、もしくは町の開発
+      fieldInfomation.BuildEdge(targetEdge, myNumber);
+    }
+  }
+
+  //ノードの所有者の設定
+  public void developNode(){
+    //右を押したらtargetNodeを進めて、左を押したらtargetNodeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで開発
+    if(keyPushJudge.GetJudge("RIGHT")){
+      do{
+        if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
+        else targetNode++;
+      }while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false );
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      do{
+        if(targetNode == 0)targetNode=FieldInfomation.NodeNum-1;
+        else targetNode--;
+      }while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false );
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetNode+10 > FieldInfomation.NodeNum)targetNode = 0;
+      else targetNode+=10;
+      while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false ){
+        if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
+        else targetNode++;
+      }
+    }else if(keyPushJudge.GetJudge("ENTER")){
+      //都市の開発、もしくは町の開発
+      fieldInfomation.BuildNode(targetNode, myNumber);
+    }
+
+
+
+  }
+
+}
+
+//ターンの終了
+class EndTurn extends PlayerActionBase{
+  //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
+
+  //コンストラクタ
+  public EndTurn(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
 
   public String Update(int elapsedTime){
-    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    //BACKSPACEで一つ戻る
+    if(PlayerStateMachineChildOFF() == "ChildOFF"){
+      return "ChildOFF";
+    }
+    //ENTER押したらターンの終わり
+    if( keyPushJudge.GetJudge("ENTER") ){
+      return "ChangePlayer";
+    }
 
+    return "null";
   };
-  public void Render(){
-    fill(50, 50, 50, 255);
-    textSize(20);
-    text("Development", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
-
+  public void Render(){};
+  public void OnEnter(){
+    messageBox.MessageON("Do you want to end your turn?", "YES:ENTER   NO:BACK_SPACE");
   };
-  public void OnEnter(){};
-  public void OnExit(){};
+  public void OnExit(){
+    messageBox.MessageOFF();
+  };
 }

@@ -61,11 +61,13 @@ public void init(){
    imageMode(CENTER);
 
    drawCount = 0;//経過フレームを数える
+   messageBox = new MessageBox();
+
    fieldInfomation = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
    keyPushJudge = new KeyPushJudge();
 
-   messageBox = new MessageBox();
+
 
 
    //画像
@@ -102,11 +104,31 @@ public void init(){
   ImageList_City2.put("3"   ,loadImage("img/city/city2_3.png"));
 
   Image_nonCity = loadImage("img/city/nonCity.png");
+
+
+  fieldInfomation.SetNodeOwner(0, 1, 2);
+  fieldInfomation.SetNodeOwner(3, 1, 1);
+  fieldInfomation.SetNodeOwner(6, 1, 2);
+  fieldInfomation.SetNodeOwner(15, 1, 2);
+  fieldInfomation.SetNodeOwner(30, 1, 1);
+  fieldInfomation.SetNodeOwner(53, 1, 2);
+  fieldInfomation.SetNodeOwner(1, 2, 2);
+  fieldInfomation.SetNodeOwner(5, 2, 1);
+  fieldInfomation.SetNodeOwner(11, 2, 2);
+  fieldInfomation.SetNodeOwner(41, 2, 2);
+  fieldInfomation.SetNodeOwner(43, 2, 1);
+  fieldInfomation.SetNodeOwner(49, 2, 2);
+  fieldInfomation.SetNodeOwner(10, 3, 2);
+  fieldInfomation.SetNodeOwner(14, 3, 1);
+  fieldInfomation.SetNodeOwner(20, 3, 2);
+  fieldInfomation.SetNodeOwner(40, 3, 2);
+  fieldInfomation.SetNodeOwner(45, 3, 1);
+  fieldInfomation.SetNodeOwner(50, 3, 2);
 }
 
 
 public void draw() {
-  fill(0, 0, 255);//HSB
+  fill(0, 0, 155);//HSB
   rect(-10, -10, width+20, height+20);
   keyPushJudge.Update();//キーが押されたかどうかの判定
 
@@ -127,15 +149,15 @@ public void draw() {
 //メインステートマシン
 class MainStateMachine extends StateChanger{
     String orderPlayerName[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
-    int whoseTurn = 0;//今誰のターンなのか管理する
+    public int whoseTurn = 0;//今誰のターンなのか管理する
     boolean debugFlag = false;//デバッグモードONのフラグ
     //コンストラクタ
     public MainStateMachine(){
       super();
 
-      Add("player1",new PlayerStateMachine( "player1", 0));
-      Add("player2",new PlayerStateMachine( "player2", 1));
-      Add("player3",new PlayerStateMachine( "player3", 2));
+      Add("player1",new PlayerStateMachine( "player1", 1));
+      Add("player2",new PlayerStateMachine( "player2", 2));
+      Add("player3",new PlayerStateMachine( "player3", 3));
       Add("debug",new Debug());
       //プレイヤーのターン順序
       orderPlayerName[0] = "player1";
@@ -283,24 +305,14 @@ public static final int FIELD_LENGTH_Y = 800;
 public static final int FIELD_POSITION_X = 800;
 public static final int FIELD_POSITION_Y = 250;
 
-//エリアの種類
-enum AreaType{
-  Hills,
-  Pasture,
-  Mountains,
-  Forest,
-  Fields,
-  Grassland,
-  Desert
-}
-
 //資材の種類
 enum MaterialType{
   Brick(0, "Brick"),
   Lumber(1, "Lumber"),
   Wool(2, "Wool"),
   Grain(3, "Grain"),
-  Iron(4, "Iron");
+  Iron(4, "Iron"),
+  Empty(5, "Empty");
 
   private final int id;
   private final String name;
@@ -335,18 +347,39 @@ enum MaterialType{
       case 3:return( MaterialType.Grain );
       case 4:return( MaterialType.Iron );
 
-      default:return( MaterialType.Brick );
+      default:return( MaterialType.Empty );
     }
+  }
+}
+
+
+
+//エリアの種類
+enum AreaType{
+  Hills(MaterialType.Brick),
+  Pasture(MaterialType.Wool),
+  Mountains(MaterialType.Iron),
+  Forest(MaterialType.Lumber),
+  Fields(MaterialType.Grain),
+  Desert(MaterialType.Empty);
+
+  private final MaterialType materialType;
+  private AreaType(final MaterialType tmp) {
+    this.materialType = tmp;
+  }
+  public MaterialType toMaterialType(){
+    return materialType;
   }
 }
 
 //プレイヤー関数が持つ選択肢の種類
 enum PlayerSelectable{
   dice("dice"),
-  choiceCard("choiceCard"),
+  chooseCard("chooseCard"),
   tradeWithOther("tradeWithOther"),
   useCard("useCard"),
-  development("development");
+  development("development"),
+  endTurn("EndTurn");
 
   private final String text;
   private PlayerSelectable(final String text){
@@ -371,15 +404,15 @@ public static class Parameter_Player{
 
 //プレイヤーのアクションを管理するステートマシン
 class PlayerStateMachine extends StateChanger{
-  int listIndex = 0;//どの子を選択しようとしているのかというindex
+  int listIndex = 1;//どの子を選択しようとしているのかというindex,0はDiceやから1からスタート
   String myName;//自分の名前
-  int myNumber;//自分の番号、プレイヤー番号
+  int myNumber;//自分の番号、プレイヤー番号,1以上の数値
   List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
   HashMap<MaterialType, Integer> material = new HashMap<MaterialType, Integer>();//資材を管理するやつ
   int parameterRectSizeX = 200;//パラメータ表示の枠サイズX
   int parameterRectSizeY = 180;//パラメータ表示の枠サイズY
-  int actionChoicesRectSizeX = 180;//行動選択表示の枠サイズX
-  int actionChoicesRectSizeY = 150;//行動選択表示の枠サイズY
+  int actionChoosesRectSizeX = 180;//行動選択表示の枠サイズX
+  int actionChoosesRectSizeY = 150;//行動選択表示の枠サイズY
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
   public PlayerStateMachine(String tmp_myName,int tmp_myNumber){
@@ -394,14 +427,15 @@ class PlayerStateMachine extends StateChanger{
 
     //資材の初期化
     for (MaterialType m : MaterialType.values()) {
-      material.put(m,0);
+      material.put(m,10);
     }
 
     //順番大事
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
-    Add(PlayerSelectable.development.getString()    ,new Development(this));
-    Add(PlayerSelectable.choiceCard.getString()     ,new ChoiceCard(this));
+    Add(PlayerSelectable.development.getString()    ,new Development(this, myNumber));
+    Add(PlayerSelectable.chooseCard.getString()     ,new ChooseCard(this));
     Add(PlayerSelectable.tradeWithOther.getString() ,new TradeWithOther(this));
+    Add(PlayerSelectable.endTurn.getString()        ,new EndTurn(this));
     //Add(PlayerSelectable.useCard.getString()        ,new UseCard(this));
 
   }
@@ -435,7 +469,7 @@ class PlayerStateMachine extends StateChanger{
     String str = "";
     for(MaterialType m :MaterialType.values()){
       result = fieldInfomation.DiceReturnMaterial(Parameter_Player.diceNumber,
-                                                  Parameter_Player.playerNumber,
+                                                  Parameter_Player.playerNumber+1,//Nodeに登録されているプレイヤー番号に合わせる
                                                   m);
       AddMaterial(m,result);
       if(result > 0){
@@ -459,6 +493,9 @@ class PlayerStateMachine extends StateChanger{
         case "ChildOFF":
           ChildOFF();
           break;
+        case "ChangePlayer":
+          ChildOFF();
+          return "ChangePlayer";
       }
     }else{
       //次のプレイヤーに所有権を移す
@@ -467,7 +504,7 @@ class PlayerStateMachine extends StateChanger{
       }
       if(keyPushJudge.GetJudge("DOWN") == true){
         listIndex++;
-        if(childList.size() == listIndex)listIndex = 0;
+        if(childList.size() == listIndex)listIndex = 1;//0はダイスなので除いている
       }
       if(keyPushJudge.GetJudge("ENTER") == true){
         //println(childList.get(listIndex));
@@ -483,29 +520,30 @@ class PlayerStateMachine extends StateChanger{
     textSize(20);
     text(myName +"  "+ childList.get(listIndex), FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 200);
 
-    ActionChoicesRender();//行動選択の表示
+    ActionChoosesRender();//行動選択の表示
     ParameterRender();//パラメータの表示
     mCurrentState.Render();//子の呼び出し
   };
 
   //選択肢の表示
-  public void ActionChoicesRender(){
+  public void ActionChoosesRender(){
     //選択肢の表示
     pushMatrix();
     translate(30,80);
     {
       //枠の表示
-      DrawRect(0, 0, actionChoicesRectSizeX, actionChoicesRectSizeY);
-      DrawRect(4, 4, actionChoicesRectSizeX-8, actionChoicesRectSizeY-8);
+      DrawRect(0, 0, actionChoosesRectSizeX, actionChoosesRectSizeY);
+      DrawRect(4, 4, actionChoosesRectSizeX-8, actionChoosesRectSizeY-8);
 
       //選択肢の表示
       textSize(30);
       fill(50, 50, 50, 255);
-      text("->", 10, 40 + 30*listIndex);
-      text("Dice", 50, 40);
-      text("Develop", 50, 70);
-      text("Card", 50, 100);
-      text("Trade", 50, 130);
+      text("->", 10, 10 + 30*listIndex);
+      //text("Dice", 50, 40);
+      text("Develop", 50, 40);
+      text("Card", 50, 70);
+      text("Trade", 50, 100);
+      text("*END*", 50, 130);
     }
     popMatrix();
   }
@@ -552,7 +590,11 @@ class PlayerStateMachine extends StateChanger{
         break;
     }
   };
-  public void OnEnter(){};
+  public void OnEnter(){
+    //最初はダイスからなので0
+    listIndex = 1;
+    Change(childList.get(0));
+  };
   public void OnExit(){};
 }
 
@@ -573,17 +615,12 @@ class Dice extends PlayerActionBase{
     switch(m_state){
       //本当にダイスwp振るかどうかの確認
       case "YESorNO":
-        //BACKSPACEで一つ戻る
-        if(PlayerStateMachineChildOFF() == "ChildOFF"){
-          return "ChildOFF";
-        }
         //ENTERで決定
         if(keyPushJudge.GetJudge("ENTER")){
           diceNumber = PApplet.parseInt(random(1,7)) + PApplet.parseInt(random(1,7));
           Parameter_Player.diceNumber = diceNumber;
           messageBox.MessageON("dice sum-->" + Integer.toString(diceNumber), "");
           m_state = "Distribution";
-
         }
         break;
 
@@ -594,7 +631,7 @@ class Dice extends PlayerActionBase{
         if(keyPushJudge.GetJudge("ENTER")){
           targetPlayer++;
           if(targetPlayer == PLAYER_NUMBER)return "ChildOFF";
-        
+
           Parameter_Player.playerNumber = targetPlayer;//プレイヤー番号の設定
 
           //プレイヤーごとに資材の分配の計算と更新
@@ -606,7 +643,6 @@ class Dice extends PlayerActionBase{
 
         }
 
-//        return "ChildOFF";
         return "null";
 
       default:
@@ -642,7 +678,7 @@ class Dice extends PlayerActionBase{
     m_state = "YESorNO";
     diceNumber = 0;
     targetPlayer = -1;//最初に++したいから-1から始める
-    messageBox.MessageON("roll dice?(ENTER or BACKSPACE)","");
+    messageBox.MessageON(" roll dice?(ENTER or BACKSPACE)","");
   };
   public void OnExit(){
     messageBox.MessageOFF();
@@ -650,12 +686,12 @@ class Dice extends PlayerActionBase{
 }
 
 //カードを選択する
-class ChoiceCard extends PlayerActionBase{
+class ChooseCard extends PlayerActionBase{
   List<String> cardList;
   int cardIndex = 0;//カード選択のためのindex
 
   //コンストラクタ
-  public ChoiceCard(PlayerStateMachine tmp){
+  public ChooseCard(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
@@ -733,25 +769,179 @@ class UseCard extends PlayerActionBase{
 //開発
 class Development extends PlayerActionBase{
   //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
+  int targetEdge   = 0;//所有者を変更しようとするエッジの番号
+  int targetNode   = 0;//所有者を変更しようとするエッジの番号
+  int whichSetting = 0;//設定しようとしているのはどの要素か(0..エッジ,1..ノード)
+  int myNumber     = 0;//プレイヤーの固有番号
+  final static int KIND_OF_SETTING = 2;//設定できる要素の数
 
   //コンストラクタ
-  public Development(PlayerStateMachine tmp){
+  public Development(PlayerStateMachine tmp, int tmp_myNumber){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
+
+    myNumber = tmp_myNumber;
+  }
+
+  public String Update(int elapsedTime){
+
+    //設定する要素の選択
+    if(keyPushJudge.GetJudge("s")){
+      if(whichSetting == KIND_OF_SETTING-1)whichSetting = 0;
+      else whichSetting++;
+    }
+
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:developEdge();break;
+      //ノードの所有者の設定
+      case 1:developNode();break;
+      default:break;
+    }
+
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
+
+  };
+
+  public void Render(){
+    //今設定しようとしている要素名を表示
+    fill(50, 50, 50, 255);
+    textSize(20);
+    text("Development", FIELD_LENGTH_X - 400, FIELD_LENGTH_Y - 180);
+    switch(whichSetting){
+      case 0:text("Edge", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      case 1:text("Node", FIELD_LENGTH_X - 250, FIELD_LENGTH_Y - 180);break;
+      default:break;
+    }
+
+    //編集対象となるノード・エッジの表示
+    switch(whichSetting){
+      //エッジの所有者の設定
+      case 0:
+        //変数の表示
+        text("targetEdge:"+targetEdge, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        //選択しているエッジの強調描画
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
+        fieldInfomation.drawEdge(targetEdge);
+        popMatrix();
+        break;
+
+      //ノードの所有者の設定
+      case 1:
+        //変数の表示
+        text("targetNode:"+targetNode, FIELD_LENGTH_X - 350, FIELD_LENGTH_Y - 150);
+        stroke( 200, 200, 200 );
+        strokeWeight( 10 );
+        pushMatrix();
+        translate(FIELD_POSITION_X, FIELD_POSITION_Y);
+        fieldInfomation.drawNode(targetNode);
+        popMatrix();
+        break;
+    }
+  };
+  public void OnEnter(){
+    targetEdge   = 0;
+    targetNode   = 0;
+    whichSetting = 0;
+  };
+  public void OnExit(){};
+
+
+  //エッジの所有者の設定
+  public void developEdge(){
+    //右を押したらtargetEdgeを進めて、左を押したらtargetEdgeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで所有者の決定
+    if(keyPushJudge.GetJudge("RIGHT")){
+      do{
+        if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
+        else targetEdge++;
+      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      do{
+        if(targetEdge == 0)targetEdge=FieldInfomation.EdgeNum-1;
+        else targetEdge--;
+      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetEdge+10 > FieldInfomation.EdgeNum)targetEdge = 0;
+      else targetEdge+=10;
+      while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false ){
+        if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
+        else targetEdge++;
+      }
+    }else if(keyPushJudge.GetJudge("ENTER")){
+      //都市の開発、もしくは町の開発
+      fieldInfomation.BuildEdge(targetEdge, myNumber);
+    }
+  }
+
+  //ノードの所有者の設定
+  public void developNode(){
+    //右を押したらtargetNodeを進めて、左を押したらtargetNodeを減らす
+    //上を押したら所有者の切り替え
+    //下を押したら+10
+    //ENTERで開発
+    if(keyPushJudge.GetJudge("RIGHT")){
+      do{
+        if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
+        else targetNode++;
+      }while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false );
+    }else if(keyPushJudge.GetJudge("LEFT")){
+      do{
+        if(targetNode == 0)targetNode=FieldInfomation.NodeNum-1;
+        else targetNode--;
+      }while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false );
+    }else if(keyPushJudge.GetJudge("DOWN")){
+      if(targetNode+10 > FieldInfomation.NodeNum)targetNode = 0;
+      else targetNode+=10;
+      while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false ){
+        if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
+        else targetNode++;
+      }
+    }else if(keyPushJudge.GetJudge("ENTER")){
+      //都市の開発、もしくは町の開発
+      fieldInfomation.BuildNode(targetNode, myNumber);
+    }
+
+
+
+  }
+
+}
+
+//ターンの終了
+class EndTurn extends PlayerActionBase{
+  //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
+
+  //コンストラクタ
+  public EndTurn(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
   }
 
   public String Update(int elapsedTime){
-    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
+    //BACKSPACEで一つ戻る
+    if(PlayerStateMachineChildOFF() == "ChildOFF"){
+      return "ChildOFF";
+    }
+    //ENTER押したらターンの終わり
+    if( keyPushJudge.GetJudge("ENTER") ){
+      return "ChangePlayer";
+    }
 
+    return "null";
   };
-  public void Render(){
-    fill(50, 50, 50, 255);
-    textSize(20);
-    text("Development", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
-
+  public void Render(){};
+  public void OnEnter(){
+    messageBox.MessageON("Do you want to end your turn?", "YES:ENTER   NO:BACK_SPACE");
   };
-  public void OnEnter(){};
-  public void OnExit(){};
+  public void OnExit(){
+    messageBox.MessageOFF();
+  };
 }
 public MaterialType debug_AddMaterial_m = MaterialType.Brick;//デバッグに使うためのグローバル変数
 public int debug_AddMaterial_num = 1;//デバッグに使うためのグローバル変数
@@ -1467,9 +1657,85 @@ public class FieldInfomation{
       node[nodeNumber].SetHolder_and_Level(holder, cityLevel);
     }
 
+    //街道の開発
+    public void BuildEdge(int edgeNumber, int holder){
+      edge[edgeNumber].SetHolder(holder);
+    }
+
+    //都市の開発、もしくは町の開発
+    public void BuildNode(int nodeNumber, int holder){
+      //例外処理
+      if( node[nodeNumber].JudgeDevelopable(holder, nodeNumber) == false )
+        println("FieldInfomation -> BuildNode\n");
+
+      if( node[nodeNumber].cityLevel == 0 )
+        node[nodeNumber].BuildVillage(holder);
+      else
+        node[nodeNumber].Develop();
+    }
+
+    //指定されたエッジに街道を作れるのかどうか判断
+    public boolean Edge_JudgeDevelopable(int target, int holder){
+      boolean TorF = true;
+      //既に街道が建設されていないかの確認
+      TorF &= edge[target].JudgeDevelopable();
+      //街道を作ろうとしているエッジの隣に都市・町があるのかどうか
+      //ない場合にのみ、街道だけで連結しているか確認する
+      if( Edge_ExistNextNode(target ,holder) == false ){
+        TorF &= Edge_ExistLinkedLoad(target, holder);
+      }
+
+      return TorF;
+    }
+
+    //指定されたエッジの隣に同じ保有者の街道が存在するかどうか
+    public boolean Edge_ExistLinkedLoad(int target, int holder){
+      for(int number : edge[target].nextEdgeNumber){
+        if( edge[number].holder == holder )
+          return true;
+      }
+      return false;
+    }
+    //対象となるエッジの隣に町・都市があるかどうかの確認
+    public boolean Edge_ExistNextNode(int target, int holder){
+      //周りにあるノード番号を取得し、そこに町・都市があるかを確認
+      for(int number : edge[target].nextNodeNumber){
+        if( node[number].holder == holder )
+          if( node[number].cityLevel > 0 ){
+            return true;
+          }else{
+            println("FieldInfomation -> Edge_ExistNextNode     unexpected alert");
+          }
+      }
+      return false;
+    }
+
+    //指定された位置に町を作れるのかどうか判断
+    public boolean Node_JudgeDevelopable(int holder, int target){
+      //★★★近くに町がないかどうか調べる機能の追加
+      return node[target].JudgeDevelopable(holder, target);
+    }
+
     //ダイスの数・プレイヤー番号・エリアの種類をもとに、いくつ資材が得られるかを返す
     public int DiceReturnMaterial(int diceNumber, int playerNumber, MaterialType materialType){
-      return 1;
+      int resultMaterialNum = 0;//最終的にreturnする資材の数
+
+      //for文で全ノードを参照する
+      for(int i=0; i<NodeNum; i++){
+        //ifでノード（都市）の所有者がプレイヤー番号と一致するか確認
+        if(node[i].holder == playerNumber){
+          //for文でノードの周りにあるエリアを参照する
+          for(int j : node[i].nextAreaNumber){
+            //ifでエリアの番号がダイス番号と一致するか、かつ、対象のタイプか確認
+            if(area[j].holdNumber == diceNumber )
+              if(area[j].areaType.toMaterialType() == materialType)
+                resultMaterialNum += node[i].ReturnMaterialNumber();
+              //都市のレベルに従った資材の数をreturnする
+          }
+        }
+      }
+
+      return resultMaterialNum;
     }
 }
 
@@ -1494,6 +1760,14 @@ class Edge{
   public void SetHolder(int tmp_holder){
     holder = tmp_holder;
   }
+
+  //指定されたエッジに既に誰かが街道を作っていないかどうか判断する
+  public boolean JudgeDevelopable(){
+    if( holder!=0 )return false;
+    return true;
+  }
+
+
   //隣り合うエッジの番号を格納させる
   public void AddNextEdgeNumber(int Number){
     nextEdgeNumber.add(Number);
@@ -1541,6 +1815,22 @@ class Node{
   public void SetHolder_and_Level(int tmp_holder, int tmp_level){
     holder = tmp_holder;
     cityLevel = tmp_level;
+  }
+
+  //保持している都市のレベルに従った資材の数をreturnする
+  public int ReturnMaterialNumber(){
+    if(cityLevel ==0)return 0;
+    if(cityLevel ==1)return 1;
+    if(cityLevel ==2)return 2;
+    println("Node.ReturnMaterialNumber--error\n");
+    return 0;
+  }
+
+  //developを行えるかどうか判断する関数
+  public boolean JudgeDevelopable(int tmp_holder,int tmp_nodeNumber){
+    if( holder!=0 && holder != tmp_holder)return false;
+    if( cityLevel != 0 && cityLevel != 1  )return false;
+    return true;
   }
 
   //隣り合うエッジの番号を格納させる

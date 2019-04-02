@@ -3,15 +3,15 @@
 //メインステートマシン
 class MainStateMachine extends StateChanger{
     String orderPlayerName[] = new String[PLAYER_NUMBER];//プレイヤーのターン順序
-    int whoseTurn = 0;//今誰のターンなのか管理する
+    public int whoseTurn = 0;//今誰のターンなのか管理する
     boolean debugFlag = false;//デバッグモードONのフラグ
     //コンストラクタ
     public MainStateMachine(){
       super();
 
-      Add("player1",new PlayerStateMachine( "player1", 0));
-      Add("player2",new PlayerStateMachine( "player2", 1));
-      Add("player3",new PlayerStateMachine( "player3", 2));
+      Add("player1",new PlayerStateMachine( "player1", 1));
+      Add("player2",new PlayerStateMachine( "player2", 2));
+      Add("player3",new PlayerStateMachine( "player3", 3));
       Add("debug",new Debug());
       //プレイヤーのターン順序
       orderPlayerName[0] = "player1";

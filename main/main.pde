@@ -41,11 +41,13 @@ void init(){
    imageMode(CENTER);
 
    drawCount = 0;//経過フレームを数える
+   messageBox = new MessageBox();
+
    fieldInfomation = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
    keyPushJudge = new KeyPushJudge();
 
-   messageBox = new MessageBox();
+
 
 
    //画像
@@ -82,11 +84,31 @@ void init(){
   ImageList_City2.put("3"   ,loadImage("img/city/city2_3.png"));
 
   Image_nonCity = loadImage("img/city/nonCity.png");
+
+
+  fieldInfomation.SetNodeOwner(0, 1, 2);
+  fieldInfomation.SetNodeOwner(3, 1, 1);
+  fieldInfomation.SetNodeOwner(6, 1, 2);
+  fieldInfomation.SetNodeOwner(15, 1, 2);
+  fieldInfomation.SetNodeOwner(30, 1, 1);
+  fieldInfomation.SetNodeOwner(53, 1, 2);
+  fieldInfomation.SetNodeOwner(1, 2, 2);
+  fieldInfomation.SetNodeOwner(5, 2, 1);
+  fieldInfomation.SetNodeOwner(11, 2, 2);
+  fieldInfomation.SetNodeOwner(41, 2, 2);
+  fieldInfomation.SetNodeOwner(43, 2, 1);
+  fieldInfomation.SetNodeOwner(49, 2, 2);
+  fieldInfomation.SetNodeOwner(10, 3, 2);
+  fieldInfomation.SetNodeOwner(14, 3, 1);
+  fieldInfomation.SetNodeOwner(20, 3, 2);
+  fieldInfomation.SetNodeOwner(40, 3, 2);
+  fieldInfomation.SetNodeOwner(45, 3, 1);
+  fieldInfomation.SetNodeOwner(50, 3, 2);
 }
 
 
 void draw() {
-  fill(0, 0, 255);//HSB
+  fill(0, 0, 155);//HSB
   rect(-10, -10, width+20, height+20);
   keyPushJudge.Update();//キーが押されたかどうかの判定
 

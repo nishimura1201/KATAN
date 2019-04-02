@@ -20,24 +20,14 @@ public static final int FIELD_LENGTH_Y = 800;
 public static final int FIELD_POSITION_X = 800;
 public static final int FIELD_POSITION_Y = 250;
 
-//エリアの種類
-enum AreaType{
-  Hills,
-  Pasture,
-  Mountains,
-  Forest,
-  Fields,
-  Grassland,
-  Desert
-}
-
 //資材の種類
 enum MaterialType{
   Brick(0, "Brick"),
   Lumber(1, "Lumber"),
   Wool(2, "Wool"),
   Grain(3, "Grain"),
-  Iron(4, "Iron");
+  Iron(4, "Iron"),
+  Empty(5, "Empty");
 
   private final int id;
   private final String name;
@@ -72,18 +62,39 @@ enum MaterialType{
       case 3:return( MaterialType.Grain );
       case 4:return( MaterialType.Iron );
 
-      default:return( MaterialType.Brick );
+      default:return( MaterialType.Empty );
     }
+  }
+}
+
+
+
+//エリアの種類
+enum AreaType{
+  Hills(MaterialType.Brick),
+  Pasture(MaterialType.Wool),
+  Mountains(MaterialType.Iron),
+  Forest(MaterialType.Lumber),
+  Fields(MaterialType.Grain),
+  Desert(MaterialType.Empty);
+
+  private final MaterialType materialType;
+  private AreaType(final MaterialType tmp) {
+    this.materialType = tmp;
+  }
+  public MaterialType toMaterialType(){
+    return materialType;
   }
 }
 
 //プレイヤー関数が持つ選択肢の種類
 enum PlayerSelectable{
   dice("dice"),
-  choiceCard("choiceCard"),
+  chooseCard("chooseCard"),
   tradeWithOther("tradeWithOther"),
   useCard("useCard"),
-  development("development");
+  development("development"),
+  endTurn("EndTurn");
 
   private final String text;
   private PlayerSelectable(final String text){
