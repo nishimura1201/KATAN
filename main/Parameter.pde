@@ -20,6 +20,9 @@ public static final int FIELD_LENGTH_Y = 800;
 public static final int FIELD_POSITION_X = 800;
 public static final int FIELD_POSITION_Y = 250;
 
+//町の周囲に町を作れなくなる範囲
+public static final int CITY_EFFECT_RANGE = 2;
+
 //資材の種類
 enum MaterialType{
   Brick(0, "Brick"),

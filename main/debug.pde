@@ -14,22 +14,6 @@ class Debug implements IState{
 
   //コンストラクタ
   Debug(){
-    //エッジの初期設定
-    fieldInfomation.SetEdgeOwner(0, 1);
-    fieldInfomation.SetEdgeOwner(1, 1);
-    fieldInfomation.SetEdgeOwner(2, 1);
-    fieldInfomation.SetEdgeOwner(3, 1);
-    fieldInfomation.SetEdgeOwner(4, 1);
-    fieldInfomation.SetEdgeOwner(5, 1);
-
-    fieldInfomation.SetEdgeOwner(6, 2);
-    fieldInfomation.SetEdgeOwner(10, 2);
-    fieldInfomation.SetEdgeOwner(11, 2);
-    fieldInfomation.SetEdgeOwner(12, 2);
-    fieldInfomation.SetEdgeOwner(13, 2);
-    fieldInfomation.SetEdgeOwner(14, 2);
-    fieldInfomation.SetEdgeOwner(15, 2);
-
   }
 
   public String Update(int elapsedTime){

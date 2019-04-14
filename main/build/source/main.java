@@ -60,21 +60,21 @@ public void init(){
    textFont(font, 48);
    imageMode(CENTER);
 
-   drawCount = 0;//経過フレームを数える
+   drawCount  = 0;//経過フレームを数える
    messageBox = new MessageBox();
 
-   fieldInfomation = new FieldInfomation();
+   fieldInfomation  = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
-   keyPushJudge = new KeyPushJudge();
+   keyPushJudge     = new KeyPushJudge();
 
 
 
 
    //画像
-   ImageList_Area = new HashMap<AreaType, PImage>();
-   ImageList_Number = new HashMap<String, PImage>();
-   ImageList_City1 = new HashMap<String, PImage>();
-   ImageList_City2 = new HashMap<String, PImage>();
+   ImageList_Area   = new HashMap<AreaType, PImage>();
+   ImageList_Number = new HashMap<String,   PImage>();
+   ImageList_City1  = new HashMap<String,   PImage>();
+   ImageList_City2  = new HashMap<String,   PImage>();
 
   //画像読み込み
   ImageList_Area.put(AreaType.Desert   ,loadImage("img/area/Desert.png"));
@@ -105,7 +105,7 @@ public void init(){
 
   Image_nonCity = loadImage("img/city/nonCity.png");
 
-
+  //初期設定
   fieldInfomation.SetNodeOwner(0, 1, 2);
   fieldInfomation.SetNodeOwner(3, 1, 1);
   fieldInfomation.SetNodeOwner(6, 1, 2);
@@ -124,6 +124,26 @@ public void init(){
   fieldInfomation.SetNodeOwner(40, 3, 2);
   fieldInfomation.SetNodeOwner(45, 3, 1);
   fieldInfomation.SetNodeOwner(50, 3, 2);
+
+  fieldInfomation.SetEdgeOwner(0, 1);
+  fieldInfomation.SetEdgeOwner(1, 1);
+  fieldInfomation.SetEdgeOwner(2, 1);
+  fieldInfomation.SetEdgeOwner(3, 1);
+  fieldInfomation.SetEdgeOwner(4, 1);
+  fieldInfomation.SetEdgeOwner(5, 1);
+  fieldInfomation.SetEdgeOwner(20, 1);
+  fieldInfomation.SetEdgeOwner(21, 1);
+  fieldInfomation.SetEdgeOwner(22, 1);
+  fieldInfomation.SetEdgeOwner(23, 1);
+  fieldInfomation.SetEdgeOwner(24, 1);
+  fieldInfomation.SetEdgeOwner(25, 1);
+  fieldInfomation.SetEdgeOwner(26, 2);
+  fieldInfomation.SetEdgeOwner(10, 2);
+  fieldInfomation.SetEdgeOwner(11, 2);
+  fieldInfomation.SetEdgeOwner(12, 2);
+  fieldInfomation.SetEdgeOwner(13, 2);
+  fieldInfomation.SetEdgeOwner(14, 2);
+  fieldInfomation.SetEdgeOwner(15, 2);
 }
 
 
@@ -304,6 +324,9 @@ public static final int FIELD_LENGTH_Y = 800;
 //フィールドを書く位置
 public static final int FIELD_POSITION_X = 800;
 public static final int FIELD_POSITION_Y = 250;
+
+//町の周囲に町を作れなくなる範囲
+public static final int CITY_EFFECT_RANGE = 2;
 
 //資材の種類
 enum MaterialType{
@@ -789,8 +812,41 @@ class Development extends PlayerActionBase{
     if(keyPushJudge.GetJudge("s")){
       if(whichSetting == KIND_OF_SETTING-1)whichSetting = 0;
       else whichSetting++;
+
+      //設定対象が切り替わるタイミングで、設定できる場所を探しておく
+      switch(whichSetting){
+        //エッジの所有者の設定
+        case 0:
+          targetEdge = 0;
+          //最初に開発モードに入るときに開発できるエッジを探す
+          while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false ){
+            targetEdge++;
+            //★★エッジすら開発できない事はないだろうっていう設計
+          }
+        break;
+
+        //ノードの所有者の設定
+        case 1:
+          targetNode = 0;
+          //最初に開発モードに入るときに開発できるノードを探す
+          while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false ){
+            targetNode++;
+            if(targetNode+1 == FieldInfomation.NodeNum){
+              targetNode   = 0;
+              whichSetting = 0;
+              messageBox.MessageON("place you can develop doesn't exist. ","");
+
+              break;
+            }
+          }
+        break;
+
+        default:break;
+      }
     }
 
+
+    //開発の実行
     switch(whichSetting){
       //エッジの所有者の設定
       case 0:developEdge();break;
@@ -800,7 +856,6 @@ class Development extends PlayerActionBase{
     }
 
     return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
-
   };
 
   public void Render(){
@@ -846,6 +901,14 @@ class Development extends PlayerActionBase{
     targetEdge   = 0;
     targetNode   = 0;
     whichSetting = 0;
+
+
+    //最初に開発モードに入るときに開発できるエッジを探す
+    while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false ){
+      targetEdge++;
+      //★★エッジすら開発できない事はないだろうっていう設計
+    }
+
   };
   public void OnExit(){};
 
@@ -860,21 +923,21 @@ class Development extends PlayerActionBase{
       do{
         if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
         else targetEdge++;
-      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+      }while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false );
     }else if(keyPushJudge.GetJudge("LEFT")){
       do{
         if(targetEdge == 0)targetEdge=FieldInfomation.EdgeNum-1;
         else targetEdge--;
-      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+      }while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false );
     }else if(keyPushJudge.GetJudge("DOWN")){
       if(targetEdge+10 > FieldInfomation.EdgeNum)targetEdge = 0;
       else targetEdge+=10;
-      while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false ){
+      while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false ){
         if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
         else targetEdge++;
       }
     }else if(keyPushJudge.GetJudge("ENTER")){
-      //都市の開発、もしくは町の開発
+      //都市の開発、もしくは町の開発の実行
       fieldInfomation.BuildEdge(targetEdge, myNumber);
     }
   }
@@ -885,6 +948,9 @@ class Development extends PlayerActionBase{
     //上を押したら所有者の切り替え
     //下を押したら+10
     //ENTERで開発
+
+    //★★どこにも開発できる場所がないならだめーって返す
+    //★★developに入ったときにもdevelop出来る場所なのか判定を入れる
     if(keyPushJudge.GetJudge("RIGHT")){
       do{
         if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
@@ -959,22 +1025,6 @@ class Debug implements IState{
 
   //コンストラクタ
   Debug(){
-    //エッジの初期設定
-    fieldInfomation.SetEdgeOwner(0, 1);
-    fieldInfomation.SetEdgeOwner(1, 1);
-    fieldInfomation.SetEdgeOwner(2, 1);
-    fieldInfomation.SetEdgeOwner(3, 1);
-    fieldInfomation.SetEdgeOwner(4, 1);
-    fieldInfomation.SetEdgeOwner(5, 1);
-
-    fieldInfomation.SetEdgeOwner(6, 2);
-    fieldInfomation.SetEdgeOwner(10, 2);
-    fieldInfomation.SetEdgeOwner(11, 2);
-    fieldInfomation.SetEdgeOwner(12, 2);
-    fieldInfomation.SetEdgeOwner(13, 2);
-    fieldInfomation.SetEdgeOwner(14, 2);
-    fieldInfomation.SetEdgeOwner(15, 2);
-
   }
 
   public String Update(int elapsedTime){
@@ -1675,12 +1725,12 @@ public class FieldInfomation{
     }
 
     //指定されたエッジに街道を作れるのかどうか判断
-    public boolean Edge_JudgeDevelopable(int target, int holder){
+    public boolean Edge_JudgeDevelopable(int holder, int target){
       boolean TorF = true;
       //既に街道が建設されていないかの確認
       TorF &= edge[target].JudgeDevelopable();
-      //街道を作ろうとしているエッジの隣に都市・町があるのかどうか
-      //ない場合にのみ、街道だけで連結しているか確認する
+      //★★街道を作ろうとしているエッジの隣に都市・町があるのかどうか
+      //★ない場合にのみ、街道で連結しているか確認する
       if( Edge_ExistNextNode(target ,holder) == false ){
         TorF &= Edge_ExistLinkedLoad(target, holder);
       }
@@ -1710,10 +1760,55 @@ public class FieldInfomation{
       return false;
     }
 
-    //指定された位置に町を作れるのかどうか判断
-    public boolean Node_JudgeDevelopable(int holder, int target){
-      //★★★近くに町がないかどうか調べる機能の追加
-      return node[target].JudgeDevelopable(holder, target);
+    //指定された位置で開発ができるかどうか判断
+    public boolean Node_JudgeDevelopable(int holder, int targetNode){
+    //true:できる  false:できない
+
+      //所有者の一致かつ都市レベルが町なら（発展させられるなら）すぐにokを出す
+      if( node[targetNode].JudgeDevelopable(holder, targetNode))
+        return true;
+
+      //1.未開の地かつ、近くに町がないかどうか確認
+      //2.街道が繋がっているかどうか確認
+      boolean TorF = Node_searchCityforDevelop(targetNode, CITY_EFFECT_RANGE)
+                  && Node_searchLoadforDevelop(targetNode, holder);
+
+      return TorF;
+    }
+
+    //指定された位置の近く（距離２以内）に町が存在しないかどうか調べる
+    //存在するならfalse,しないならtrue(true:建築できる！って意味ね)
+    public boolean Node_searchCityforDevelop(int target,int range){
+      //range : 都市がないかどうかを探す距離
+      //調べるべき範囲を超えているなら処理を行わない
+      if(range == 0)
+        return true;
+      else{
+        List<Integer> nodeList = node[target].nextNodeNumber;
+        //周囲のエッジの数だけ繰り返す
+        for(int tmp_target:nodeList){
+          if( Node_searchCityforDevelop(tmp_target,range-1) == false )
+            return false;
+        }
+
+        //その場所に町・都市が存在するか確認
+        if( node[target].CheckExistCity() )
+          //町・都市があるなら開発できないねー
+          return false;
+        else
+          return true;
+      }
+    }
+
+    //指定されたノードに繋がる街道が存在するかどうか調べる
+    public boolean Node_searchLoadforDevelop(int targetNode, int holder){
+      //true:ある  false:ない
+      List<Integer> edgeList = node[targetNode].nextEdgeNumber;
+      for(int target : edgeList){
+        if( edge[target].holder == holder )
+          return true;
+      }
+      return false;
     }
 
     //ダイスの数・プレイヤー番号・エリアの種類をもとに、いくつ資材が得られるかを返す
@@ -1826,12 +1921,22 @@ class Node{
     return 0;
   }
 
-  //developを行えるかどうか判断する関数
+  //develop(細かくは発展)を行えるかどうか（未開拓地cityLevel:0の判定はNode_searchCityforDevelopに任せる）判断する関数
   public boolean JudgeDevelopable(int tmp_holder,int tmp_nodeNumber){
+    //所有者が指定された人と一致する？もしくは所有者がいない？
     if( holder!=0 && holder != tmp_holder)return false;
-    if( cityLevel != 0 && cityLevel != 1  )return false;
+    //もしくは町？
+    if( cityLevel == 1  )return true;
+    return false;
+  }
+
+  //指定された芭蕉に町・都市があるか確認
+  public boolean CheckExistCity(){
+  //true:ある false:ない
+  if( cityLevel == 0)return false;
     return true;
   }
+
 
   //隣り合うエッジの番号を格納させる
   public void AddNextEdgeNumber(int Number){

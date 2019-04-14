@@ -312,12 +312,12 @@ public class FieldInfomation{
     }
 
     //指定されたエッジに街道を作れるのかどうか判断
-    boolean Edge_JudgeDevelopable(int target, int holder){
+    boolean Edge_JudgeDevelopable(int holder, int target){
       boolean TorF = true;
       //既に街道が建設されていないかの確認
       TorF &= edge[target].JudgeDevelopable();
-      //街道を作ろうとしているエッジの隣に都市・町があるのかどうか
-      //ない場合にのみ、街道だけで連結しているか確認する
+      //★★街道を作ろうとしているエッジの隣に都市・町があるのかどうか
+      //★ない場合にのみ、街道で連結しているか確認する
       if( Edge_ExistNextNode(target ,holder) == false ){
         TorF &= Edge_ExistLinkedLoad(target, holder);
       }
@@ -347,10 +347,55 @@ public class FieldInfomation{
       return false;
     }
 
-    //指定された位置に町を作れるのかどうか判断
-    boolean Node_JudgeDevelopable(int holder, int target){
-      //★★★近くに町がないかどうか調べる機能の追加
-      return node[target].JudgeDevelopable(holder, target);
+    //指定された位置で開発ができるかどうか判断
+    boolean Node_JudgeDevelopable(int holder, int targetNode){
+    //true:できる  false:できない
+
+      //所有者の一致かつ都市レベルが町なら（発展させられるなら）すぐにokを出す
+      if( node[targetNode].JudgeDevelopable(holder, targetNode))
+        return true;
+
+      //1.未開の地かつ、近くに町がないかどうか確認
+      //2.街道が繋がっているかどうか確認
+      boolean TorF = Node_searchCityforDevelop(targetNode, CITY_EFFECT_RANGE)
+                  && Node_searchLoadforDevelop(targetNode, holder);
+
+      return TorF;
+    }
+
+    //指定された位置の近く（距離２以内）に町が存在しないかどうか調べる
+    //存在するならfalse,しないならtrue(true:建築できる！って意味ね)
+    boolean Node_searchCityforDevelop(int target,int range){
+      //range : 都市がないかどうかを探す距離
+      //調べるべき範囲を超えているなら処理を行わない
+      if(range == 0)
+        return true;
+      else{
+        List<Integer> nodeList = node[target].nextNodeNumber;
+        //周囲のエッジの数だけ繰り返す
+        for(int tmp_target:nodeList){
+          if( Node_searchCityforDevelop(tmp_target,range-1) == false )
+            return false;
+        }
+
+        //その場所に町・都市が存在するか確認
+        if( node[target].CheckExistCity() )
+          //町・都市があるなら開発できないねー
+          return false;
+        else
+          return true;
+      }
+    }
+
+    //指定されたノードに繋がる街道が存在するかどうか調べる
+    boolean Node_searchLoadforDevelop(int targetNode, int holder){
+      //true:ある  false:ない
+      List<Integer> edgeList = node[targetNode].nextEdgeNumber;
+      for(int target : edgeList){
+        if( edge[target].holder == holder )
+          return true;
+      }
+      return false;
     }
 
     //ダイスの数・プレイヤー番号・エリアの種類をもとに、いくつ資材が得られるかを返す
@@ -463,12 +508,22 @@ class Node{
     return 0;
   }
 
-  //developを行えるかどうか判断する関数
+  //develop(細かくは発展)を行えるかどうか（未開拓地cityLevel:0の判定はNode_searchCityforDevelopに任せる）判断する関数
   boolean JudgeDevelopable(int tmp_holder,int tmp_nodeNumber){
+    //所有者が指定された人と一致する？もしくは所有者がいない？
     if( holder!=0 && holder != tmp_holder)return false;
-    if( cityLevel != 0 && cityLevel != 1  )return false;
+    //もしくは町？
+    if( cityLevel == 1  )return true;
+    return false;
+  }
+
+  //指定された芭蕉に町・都市があるか確認
+  boolean CheckExistCity(){
+  //true:ある false:ない
+  if( cityLevel == 0)return false;
     return true;
   }
+
 
   //隣り合うエッジの番号を格納させる
   public void AddNextEdgeNumber(int Number){

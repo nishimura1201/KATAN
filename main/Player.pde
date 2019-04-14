@@ -387,8 +387,41 @@ class Development extends PlayerActionBase{
     if(keyPushJudge.GetJudge("s")){
       if(whichSetting == KIND_OF_SETTING-1)whichSetting = 0;
       else whichSetting++;
+
+      //設定対象が切り替わるタイミングで、設定できる場所を探しておく
+      switch(whichSetting){
+        //エッジの所有者の設定
+        case 0:
+          targetEdge = 0;
+          //最初に開発モードに入るときに開発できるエッジを探す
+          while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false ){
+            targetEdge++;
+            //★★エッジすら開発できない事はないだろうっていう設計
+          }
+        break;
+
+        //ノードの所有者の設定
+        case 1:
+          targetNode = 0;
+          //最初に開発モードに入るときに開発できるノードを探す
+          while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false ){
+            targetNode++;
+            if(targetNode+1 == FieldInfomation.NodeNum){
+              targetNode   = 0;
+              whichSetting = 0;
+              messageBox.MessageON("place you can develop doesn't exist. ","");
+
+              break;
+            }
+          }
+        break;
+
+        default:break;
+      }
     }
 
+
+    //開発の実行
     switch(whichSetting){
       //エッジの所有者の設定
       case 0:developEdge();break;
@@ -398,7 +431,6 @@ class Development extends PlayerActionBase{
     }
 
     return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
-
   };
 
   public void Render(){
@@ -444,6 +476,14 @@ class Development extends PlayerActionBase{
     targetEdge   = 0;
     targetNode   = 0;
     whichSetting = 0;
+
+
+    //最初に開発モードに入るときに開発できるエッジを探す
+    while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false ){
+      targetEdge++;
+      //★★エッジすら開発できない事はないだろうっていう設計
+    }
+
   };
   public void OnExit(){};
 
@@ -458,21 +498,21 @@ class Development extends PlayerActionBase{
       do{
         if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
         else targetEdge++;
-      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+      }while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false );
     }else if(keyPushJudge.GetJudge("LEFT")){
       do{
         if(targetEdge == 0)targetEdge=FieldInfomation.EdgeNum-1;
         else targetEdge--;
-      }while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false );
+      }while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false );
     }else if(keyPushJudge.GetJudge("DOWN")){
       if(targetEdge+10 > FieldInfomation.EdgeNum)targetEdge = 0;
       else targetEdge+=10;
-      while( fieldInfomation.Edge_JudgeDevelopable(targetEdge, myNumber) == false ){
+      while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false ){
         if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
         else targetEdge++;
       }
     }else if(keyPushJudge.GetJudge("ENTER")){
-      //都市の開発、もしくは町の開発
+      //都市の開発、もしくは町の開発の実行
       fieldInfomation.BuildEdge(targetEdge, myNumber);
     }
   }
@@ -483,6 +523,9 @@ class Development extends PlayerActionBase{
     //上を押したら所有者の切り替え
     //下を押したら+10
     //ENTERで開発
+
+    //★★どこにも開発できる場所がないならだめーって返す
+    //★★developに入ったときにもdevelop出来る場所なのか判定を入れる
     if(keyPushJudge.GetJudge("RIGHT")){
       do{
         if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;

@@ -40,21 +40,21 @@ void init(){
    textFont(font, 48);
    imageMode(CENTER);
 
-   drawCount = 0;//経過フレームを数える
+   drawCount  = 0;//経過フレームを数える
    messageBox = new MessageBox();
 
-   fieldInfomation = new FieldInfomation();
+   fieldInfomation  = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
-   keyPushJudge = new KeyPushJudge();
+   keyPushJudge     = new KeyPushJudge();
 
 
 
 
    //画像
-   ImageList_Area = new HashMap<AreaType, PImage>();
-   ImageList_Number = new HashMap<String, PImage>();
-   ImageList_City1 = new HashMap<String, PImage>();
-   ImageList_City2 = new HashMap<String, PImage>();
+   ImageList_Area   = new HashMap<AreaType, PImage>();
+   ImageList_Number = new HashMap<String,   PImage>();
+   ImageList_City1  = new HashMap<String,   PImage>();
+   ImageList_City2  = new HashMap<String,   PImage>();
 
   //画像読み込み
   ImageList_Area.put(AreaType.Desert   ,loadImage("img/area/Desert.png"));
@@ -85,7 +85,7 @@ void init(){
 
   Image_nonCity = loadImage("img/city/nonCity.png");
 
-
+  //初期設定
   fieldInfomation.SetNodeOwner(0, 1, 2);
   fieldInfomation.SetNodeOwner(3, 1, 1);
   fieldInfomation.SetNodeOwner(6, 1, 2);
@@ -104,6 +104,26 @@ void init(){
   fieldInfomation.SetNodeOwner(40, 3, 2);
   fieldInfomation.SetNodeOwner(45, 3, 1);
   fieldInfomation.SetNodeOwner(50, 3, 2);
+
+  fieldInfomation.SetEdgeOwner(0, 1);
+  fieldInfomation.SetEdgeOwner(1, 1);
+  fieldInfomation.SetEdgeOwner(2, 1);
+  fieldInfomation.SetEdgeOwner(3, 1);
+  fieldInfomation.SetEdgeOwner(4, 1);
+  fieldInfomation.SetEdgeOwner(5, 1);
+  fieldInfomation.SetEdgeOwner(20, 1);
+  fieldInfomation.SetEdgeOwner(21, 1);
+  fieldInfomation.SetEdgeOwner(22, 1);
+  fieldInfomation.SetEdgeOwner(23, 1);
+  fieldInfomation.SetEdgeOwner(24, 1);
+  fieldInfomation.SetEdgeOwner(25, 1);
+  fieldInfomation.SetEdgeOwner(26, 2);
+  fieldInfomation.SetEdgeOwner(10, 2);
+  fieldInfomation.SetEdgeOwner(11, 2);
+  fieldInfomation.SetEdgeOwner(12, 2);
+  fieldInfomation.SetEdgeOwner(13, 2);
+  fieldInfomation.SetEdgeOwner(14, 2);
+  fieldInfomation.SetEdgeOwner(15, 2);
 }
 
 
