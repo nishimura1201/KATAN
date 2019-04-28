@@ -67,9 +67,9 @@ class MainStateMachine extends StateChanger{
 //複数の子を管理するステートマシンのベースとなるクラス
 public class StateChanger implements IState{
   Map<String, IState> mStates = new HashMap<String, IState>();
-  IState mCurrentState = new emptyState();
-  List<String> childList = new ArrayList<String>();//子の名前のリスト
-  boolean childOn = false;//子に主導権が移っているかどうか
+  IState mCurrentState        = new emptyState();
+  List<String> childList      = new ArrayList<String>();//子の名前のリスト
+  boolean childOn             = false;//子に主導権が移っているかどうか
 
   //コンストラクタ
   public StateChanger(){

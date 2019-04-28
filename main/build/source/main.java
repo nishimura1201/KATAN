@@ -6,6 +6,7 @@ import processing.opengl.*;
 import java.util.*; 
 import java.io.File; 
 import java.io.FileNotFoundException; 
+import java.util.Collections; 
 
 import java.util.HashMap; 
 import java.util.ArrayList; 
@@ -20,6 +21,7 @@ public class main extends PApplet {
 
 //import java.util.Map;
 //import java.util.HashMap;
+
 
 
 
@@ -39,6 +41,10 @@ HashMap<String, PImage> ImageList_Number;
 HashMap<String, PImage> ImageList_City1;
 HashMap<String, PImage> ImageList_City2;
 PImage Image_nonCity;
+
+//カードリスト
+List<CardList> cards = new ArrayList<CardList>();
+
 
 public void settings() {
   size(FIELD_LENGTH_X, FIELD_LENGTH_Y, P2D);
@@ -66,8 +72,6 @@ public void init(){
    fieldInfomation  = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
    keyPushJudge     = new KeyPushJudge();
-
-
 
 
    //画像
@@ -111,7 +115,7 @@ public void init(){
   fieldInfomation.SetNodeOwner(6, 1, 2);
   fieldInfomation.SetNodeOwner(15, 1, 2);
   fieldInfomation.SetNodeOwner(30, 1, 1);
-  fieldInfomation.SetNodeOwner(53, 1, 2);
+  fieldInfomation.SetNodeOwner(53, 1, 1);
   fieldInfomation.SetNodeOwner(1, 2, 2);
   fieldInfomation.SetNodeOwner(5, 2, 1);
   fieldInfomation.SetNodeOwner(11, 2, 2);
@@ -144,6 +148,17 @@ public void init(){
   fieldInfomation.SetEdgeOwner(13, 2);
   fieldInfomation.SetEdgeOwner(14, 2);
   fieldInfomation.SetEdgeOwner(15, 2);
+
+
+
+  //発展カードの初期化・シャッフル
+  for (CardList tmp : CardList.values()){
+    for(int i=0;i<tmp.returnNumber();i++){
+      cards.add(tmp);
+    }
+  }
+  Collections.shuffle(cards);
+  println(cards.get(0));
 }
 
 
@@ -233,9 +248,9 @@ class MainStateMachine extends StateChanger{
 //複数の子を管理するステートマシンのベースとなるクラス
 public class StateChanger implements IState{
   Map<String, IState> mStates = new HashMap<String, IState>();
-  IState mCurrentState = new emptyState();
-  List<String> childList = new ArrayList<String>();//子の名前のリスト
-  boolean childOn = false;//子に主導権が移っているかどうか
+  IState mCurrentState        = new emptyState();
+  List<String> childList      = new ArrayList<String>();//子の名前のリスト
+  boolean childOn             = false;//子に主導権が移っているかどうか
 
   //コンストラクタ
   public StateChanger(){
@@ -330,17 +345,17 @@ public static final int CITY_EFFECT_RANGE = 2;
 
 //資材の種類
 enum MaterialType{
-  Brick(0, "Brick"),
+  Brick (0, "Brick"),
   Lumber(1, "Lumber"),
-  Wool(2, "Wool"),
-  Grain(3, "Grain"),
-  Iron(4, "Iron"),
-  Empty(5, "Empty");
+  Wool  (2, "Wool"),
+  Grain (3, "Grain"),
+  Iron  (4, "Iron"),
+  Empty (5, "Empty");
 
-  private final int id;
+  private final int    id;
   private final String name;
   private MaterialType(final int id,final String name) {
-    this.id = id;
+    this.id   = id;
     this.name = name;
   }
   public int getId() {
@@ -395,13 +410,36 @@ enum AreaType{
   }
 }
 
+//カードの種類
+enum CardList{
+  Knight(14,     "Knight"),     //騎士
+  BuildLoad(2,   "BuildLoad"),   //街道建設
+  GetMaterial(2, "GetMaterial"), //収穫
+  Monopoly(2,    "Monopoly"),    //独占
+  Point(5,       "Point");        //勝利ポイント
+
+  private final int number;//各カードの枚数
+  private final String name;//各カードの名称
+  private CardList(int tmp, String tmp2){
+    this.number = tmp;
+    this.name = tmp2;
+  }
+  public int returnNumber(){
+    return this.number;
+  }
+  public String returnName(){
+    return this.name;
+  }
+}
+
+
 //プレイヤー関数が持つ選択肢の種類
 enum PlayerSelectable{
   dice("dice"),
-  chooseCard("chooseCard"),
-  tradeWithOther("tradeWithOther"),
-  useCard("useCard"),
   development("development"),
+  buyCard("buyCard"),
+  useCard("useCard"),
+  tradeWithOther("tradeWithOther"),
   endTurn("EndTurn");
 
   private final String text;
@@ -430,23 +468,23 @@ class PlayerStateMachine extends StateChanger{
   int listIndex = 1;//どの子を選択しようとしているのかというindex,0はDiceやから1からスタート
   String myName;//自分の名前
   int myNumber;//自分の番号、プレイヤー番号,1以上の数値
-  List<String> cardList = new ArrayList<String>();//所持しているカードのリスト
+  List<CardList> myCards = new ArrayList<CardList>();//所持しているカードのリスト
   HashMap<MaterialType, Integer> material = new HashMap<MaterialType, Integer>();//資材を管理するやつ
   int parameterRectSizeX = 200;//パラメータ表示の枠サイズX
   int parameterRectSizeY = 180;//パラメータ表示の枠サイズY
   int actionChoosesRectSizeX = 180;//行動選択表示の枠サイズX
-  int actionChoosesRectSizeY = 150;//行動選択表示の枠サイズY
+  int actionChoosesRectSizeY = 180;//行動選択表示の枠サイズY
 
   //コンストラクタ メインステートマシンの実体と次のプレイヤーの名前
   public PlayerStateMachine(String tmp_myName,int tmp_myNumber){
 
-    myName = tmp_myName;
+    myName   = tmp_myName;
     myNumber = tmp_myNumber;
 
-    CardAdd("card1");
-    CardAdd("card2");
-    CardAdd("card3");
-    CardAdd("card4");
+    CardAdd(CardList.BuildLoad);
+//    CardAdd("card2");
+//    CardAdd("card3");
+//    CardAdd("card4");
 
     //資材の初期化
     for (MaterialType m : MaterialType.values()) {
@@ -456,11 +494,11 @@ class PlayerStateMachine extends StateChanger{
     //順番大事
     Add(PlayerSelectable.dice.getString()           ,new Dice(this));
     Add(PlayerSelectable.development.getString()    ,new Development(this, myNumber));
-    Add(PlayerSelectable.chooseCard.getString()     ,new ChooseCard(this));
+    Add(PlayerSelectable.buyCard.getString()        ,new BuyCard(this));
+    Add(PlayerSelectable.useCard.getString()     ,new UseCard(this));
     Add(PlayerSelectable.tradeWithOther.getString() ,new TradeWithOther(this));
     Add(PlayerSelectable.endTurn.getString()        ,new EndTurn(this));
     //Add(PlayerSelectable.useCard.getString()        ,new UseCard(this));
-
   }
 
   //子の主導権を消し、自分に主導権が戻る.子が呼ぶ
@@ -470,17 +508,57 @@ class PlayerStateMachine extends StateChanger{
   }
 
   //所持カードを追加
-  public void CardAdd(String cardName){
-    cardList.add(cardName);
+  public void CardAdd(CardList card){
+    myCards.add(card);
   }
+
   //カードリストを返す
-  public List<String> GetCardList(){
-    return cardList;
+  public List<CardList> GetCardList(){
+    return myCards;
   }
+
   //資材を追加する(資材の種類, 追加する個数)
   public void AddMaterial(MaterialType m, int num){
     int tmp = material.get(m);
     material.put(m, tmp+num);
+  }
+
+  //資材を消費する(資材の種類, 消費する個数)
+  public void UseMaterial(MaterialType m, int num){
+    int tmp = material.get(m);
+    //マイナスになったら例外通知
+    if( (tmp-num) < 0)
+      println("PlayerStateMachine -> UseMaterial");
+
+    material.put(m, tmp-num);
+  }
+
+  //開発等に必要な資材を持っているか確認する. target:町or街道orETC
+  public boolean CheckMaterialsforDevelopment(String target){
+    //true:大丈夫  false:だめ
+    switch( target ){
+      case "Load":
+        if( material.get(MaterialType.Brick)     < 1
+            || material.get(MaterialType.Lumber) < 1)return false;
+            break;
+      case "Settlement":
+      if( material.get(MaterialType.Brick)     < 1
+          || material.get(MaterialType.Lumber) < 1
+          || material.get(MaterialType.Wool)   < 1
+          || material.get(MaterialType.Grain)  < 1)return false;
+          break;
+      case "City":
+            if( material.get(MaterialType.Grain)   < 2
+                || material.get(MaterialType.Iron) < 3)return false;
+                break;
+      case "Card":
+        if( material.get(MaterialType.Wool)     < 1
+            || material.get(MaterialType.Grain) < 1
+            || material.get(MaterialType.Iron)  < 1)return false;
+        break;
+    }
+
+    return true;
   }
 
   //ダイスの目から、自分の所有する開拓地に合わせた資材をゲット
@@ -511,7 +589,7 @@ class PlayerStateMachine extends StateChanger{
   public String Update(int elapsedTime){
     //子に主導権が移ってるならここでの操作は行わんようにっていうやつ
     if(childOn == true){
-      String order = mCurrentState.Update(elapsedTime);//子の呼び出し
+      String order = mCurrentState.Update(elapsedTime);//子の更新処理実行
       switch(order){
         case "ChildOFF":
           ChildOFF();
@@ -530,7 +608,6 @@ class PlayerStateMachine extends StateChanger{
         if(childList.size() == listIndex)listIndex = 1;//0はダイスなので除いている
       }
       if(keyPushJudge.GetJudge("ENTER") == true){
-        //println(childList.get(listIndex));
         Change(childList.get(listIndex));
       }
     }
@@ -564,9 +641,10 @@ class PlayerStateMachine extends StateChanger{
       text("->", 10, 10 + 30*listIndex);
       //text("Dice", 50, 40);
       text("Develop", 50, 40);
-      text("Card", 50, 70);
-      text("Trade", 50, 100);
-      text("*END*", 50, 130);
+      text("BuyCard", 50, 70);
+      text("UseCard", 50, 100);
+      text("Trade", 50, 130);
+      text("*END*", 50, 160);
     }
     popMatrix();
   }
@@ -590,10 +668,10 @@ class PlayerStateMachine extends StateChanger{
       //パラメータの表示
       textSize(30);
       fill(50, 50, 50, 255);
-      text("Brick     :"+material.get(MaterialType.Brick), 10, 40);
-      text("Lumber :"+material.get(MaterialType.Lumber), 10, 70);
-      text("Wool     :"+material.get(MaterialType.Wool), 10, 100);
-      text("Grain    :"+material.get(MaterialType.Grain), 10, 130);
+      text("Brick     :" +material.get(MaterialType.Brick), 10, 40);
+      text("Lumber :"    +material.get(MaterialType.Lumber), 10, 70);
+      text("Wool     :"  +material.get(MaterialType.Wool), 10, 100);
+      text("Grain    :"  +material.get(MaterialType.Grain), 10, 130);
       text("Iron       :"+material.get(MaterialType.Iron), 10, 160);
     }
     popMatrix();
@@ -618,7 +696,9 @@ class PlayerStateMachine extends StateChanger{
     listIndex = 1;
     Change(childList.get(0));
   };
-  public void OnExit(){};
+  public void OnExit(){
+    messageBox.MessageOFF();
+  };
 }
 
 
@@ -708,40 +788,6 @@ class Dice extends PlayerActionBase{
   };
 }
 
-//カードを選択する
-class ChooseCard extends PlayerActionBase{
-  List<String> cardList;
-  int cardIndex = 0;//カード選択のためのindex
-
-  //コンストラクタ
-  public ChooseCard(PlayerStateMachine tmp){
-    //PlayerActionBaseのコンストラクタを起動
-    super(tmp);
-  }
-
-  //cardListを設定
-  public void SetcardList(List<String> tmp){
-    cardList = tmp;
-  };
-
-  public String Update(int elapsedTime){
-    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
-  };
-  public void Render(){
-    fill(50, 50, 50, 255);
-    textSize(20);
-    text("choiseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
-    for(int i=0;i<cardList.size();i++){
-       text(cardList.get(i), FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180 + 20*(i+1));
-    }
-  };
-  public void OnEnter(){
-    //プレイヤーの所持しているカードを取得
-    cardList = PlayerStateMachine.GetCardList();
-  };
-  public void OnExit(){};
-}
-
 //他プレイヤーとの交易
 class TradeWithOther extends PlayerActionBase{
   //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
@@ -763,17 +809,75 @@ class TradeWithOther extends PlayerActionBase{
 
   };
   public void OnEnter(){};
-  public void OnExit(){};
+  public void OnExit(){
+    messageBox.MessageOFF();
+  };
+}
+
+//カードを購入する
+class BuyCard extends PlayerActionBase{
+  PlayerStateMachine p;         //プレイヤーステートマシン（親の参照）
+  boolean childOFF_flag = false;//親に権限を返すフラグ
+  //コンストラクタ
+  public BuyCard(PlayerStateMachine tmp){
+    //PlayerActionBaseのコンストラクタを起動
+    super(tmp);
+    p = tmp;//親の参照
+
+  }
+
+  public String Update(int elapsedTime){
+    //資材が足りないならすぐに権限を親に返す
+    if(childOFF_flag)return "ChildOFF";
+
+
+    //カードの購入
+    if(keyPushJudge.GetJudge("ENTER")){
+      //資材の消費
+      p.UseMaterial(MaterialType.Wool,   1);
+      p.UseMaterial(MaterialType.Grain,  1);
+      p.UseMaterial(MaterialType.Iron,   1);
+      //カードの追加
+      p.CardAdd(cards.get(0));
+      //山札を1枚減らす
+      cards.remove(0);
+
+      //親に権限を返す
+      messageBox.MessageOFF();
+      return "ChildOFF";
+    }
+    return PlayerStateMachineChildOFF();//BACKSPACEで一つ戻る
+  };
+  public void Render(){
+  };
+  public void OnEnter(){
+    //購入できる環境が整っているかの判断
+    if( p.CheckMaterialsforDevelopment("Card") == false ){
+      //資材もってるか確認
+      messageBox.MessageON("materials for buying a card are not enough","");
+      childOFF_flag = true;
+    }else if( cards.size() == 0 ){
+      //残りのカードが0ならすぐに権限を親に返す
+      messageBox.MessageON("There are no remaining cards","");
+      childOFF_flag = true;
+    }else{
+      messageBox.MessageON("Buy a card?. ","YES:ENTER,  NO:BACKSPACE");
+    }
+
+  };
+  public void OnExit(){
+  };
 }
 
 //カードの使用
 class UseCard extends PlayerActionBase{
-  //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
+  PlayerStateMachine playerStateMachine;//プレイヤーステートマシン（親の参照）
 
   //コンストラクタ
   public UseCard(PlayerStateMachine tmp){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
+    playerStateMachine = tmp;
   }
 
   public String Update(int elapsedTime){
@@ -784,14 +888,23 @@ class UseCard extends PlayerActionBase{
     textSize(20);
     text("UseCard", FIELD_LENGTH_X - 200, FIELD_LENGTH_Y - 180);
 
+    int i=0;
+    for(CardList tmp : playerStateMachine.myCards){
+      i++;
+      text(tmp.returnName(), FIELD_LENGTH_X - 150, FIELD_LENGTH_Y - 180 + i*20);
+    }
+
+
   };
   public void OnEnter(){};
-  public void OnExit(){};
+  public void OnExit(){
+    messageBox.MessageOFF();
+  };
 }
 
 //開発
 class Development extends PlayerActionBase{
-  //PlayerStateMachine PlayerStateMachine;//プレイヤーステートマシン（親の参照）
+  PlayerStateMachine playerStateMachine;//プレイヤーステートマシン（親の参照）
   int targetEdge   = 0;//所有者を変更しようとするエッジの番号
   int targetNode   = 0;//所有者を変更しようとするエッジの番号
   int whichSetting = 0;//設定しようとしているのはどの要素か(0..エッジ,1..ノード)
@@ -802,6 +915,7 @@ class Development extends PlayerActionBase{
   public Development(PlayerStateMachine tmp, int tmp_myNumber){
     //PlayerActionBaseのコンストラクタを起動
     super(tmp);
+    playerStateMachine = tmp;
 
     myNumber = tmp_myNumber;
   }
@@ -835,7 +949,6 @@ class Development extends PlayerActionBase{
               targetNode   = 0;
               whichSetting = 0;
               messageBox.MessageON("place you can develop doesn't exist. ","");
-
               break;
             }
           }
@@ -902,7 +1015,6 @@ class Development extends PlayerActionBase{
     targetNode   = 0;
     whichSetting = 0;
 
-
     //最初に開発モードに入るときに開発できるエッジを探す
     while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false ){
       targetEdge++;
@@ -910,7 +1022,9 @@ class Development extends PlayerActionBase{
     }
 
   };
-  public void OnExit(){};
+  public void OnExit(){
+    messageBox.MessageOFF();
+  };
 
 
   //エッジの所有者の設定
@@ -937,9 +1051,27 @@ class Development extends PlayerActionBase{
         else targetEdge++;
       }
     }else if(keyPushJudge.GetJudge("ENTER")){
-      //都市の開発、もしくは町の開発の実行
-      fieldInfomation.BuildEdge(targetEdge, myNumber);
+      //資材が十分か確認
+      if( playerStateMachine.CheckMaterialsforDevelopment("Load") )
+        DoDevelopment_Edge();
+      else
+        messageBox.MessageON("materials for development are not enough", "");
+
     }
+  }
+
+  //街道の開発の実行
+  public void DoDevelopment_Edge(){
+    fieldInfomation.BuildEdge(targetEdge, myNumber);
+    //資材の消費
+    playerStateMachine.UseMaterial(MaterialType.Brick,  1);
+    playerStateMachine.UseMaterial(MaterialType.Lumber, 1);
+
+    //カーソルの移動
+    do{
+      if(targetEdge+1 == FieldInfomation.EdgeNum)targetEdge=0;
+      else targetEdge++;
+    }while( fieldInfomation.Edge_JudgeDevelopable(myNumber, targetEdge) == false );
   }
 
   //ノードの所有者の設定
@@ -949,8 +1081,6 @@ class Development extends PlayerActionBase{
     //下を押したら+10
     //ENTERで開発
 
-    //★★どこにも開発できる場所がないならだめーって返す
-    //★★developに入ったときにもdevelop出来る場所なのか判定を入れる
     if(keyPushJudge.GetJudge("RIGHT")){
       do{
         if(targetNode+1 == FieldInfomation.NodeNum)targetNode=0;
@@ -969,11 +1099,66 @@ class Development extends PlayerActionBase{
         else targetNode++;
       }
     }else if(keyPushJudge.GetJudge("ENTER")){
-      //都市の開発、もしくは町の開発
-      fieldInfomation.BuildNode(targetNode, myNumber);
+      boolean check = true;
+      //資材の確認
+      switch( fieldInfomation.whichDevelopment(targetNode) ){
+        case "Settlement":
+          if( playerStateMachine.CheckMaterialsforDevelopment("Settlement") == false ){
+            messageBox.MessageON("materials for development are not enough", "");
+            check = false;
+          }break;
+        case "City":
+          if( playerStateMachine.CheckMaterialsforDevelopment("City") == false  ){
+            messageBox.MessageON("materials for development are not enough", "");
+            check = false;
+          }break;
+      }
+
+      //開発の実行
+      if( check )
+        DoDevelopment_Node();
     }
+  }
 
+  //町・都市の開発の実行
+  public void DoDevelopment_Node(){
+    //都市の開発、もしくは町の開発
+    String res = fieldInfomation.BuildNode(targetNode, myNumber);
+    //資材の消費
+    //町を作ったのか、都市に発展させたのかで分岐
+    if(res == "Settlement"){
+      //町の開発
 
+      //資材の消費
+      playerStateMachine.UseMaterial(MaterialType.Brick,  1);
+      playerStateMachine.UseMaterial(MaterialType.Lumber, 1);
+      playerStateMachine.UseMaterial(MaterialType.Wool,   1);
+      playerStateMachine.UseMaterial(MaterialType.Grain,  1);
+    }else if(res == "City"){
+      //都市に発展
+
+      //資材の消費
+      playerStateMachine.UseMaterial(MaterialType.Wool,  2);
+      playerStateMachine.UseMaterial(MaterialType.Iron,  3);
+
+      //カーソルの移動
+      //建設できんなら街道建設に移行
+      int tmp = 0;
+      while( fieldInfomation.Node_JudgeDevelopable(myNumber, targetNode) == false ){
+        targetNode++;
+        tmp++;
+        if(targetNode == FieldInfomation.NodeNum)
+          targetNode   = 0;
+
+        if(tmp+1 == FieldInfomation.NodeNum){
+          targetNode   = 0;
+          whichSetting = 0;
+          break;
+        }
+      }
+    }else{
+      println("error Development -> DoDevelopment");
+    }
 
   }
 
@@ -1712,16 +1897,39 @@ public class FieldInfomation{
       edge[edgeNumber].SetHolder(holder);
     }
 
-    //都市の開発、もしくは町の開発
-    public void BuildNode(int nodeNumber, int holder){
-      //例外処理
-      if( node[nodeNumber].JudgeDevelopable(holder, nodeNumber) == false )
-        println("FieldInfomation -> BuildNode\n");
-
-      if( node[nodeNumber].cityLevel == 0 )
-        node[nodeNumber].BuildVillage(holder);
+    //指定されたノードで行うのは，町の開発なのか，都市への発展なのか
+    public String whichDevelopment(int targetNode){
+      if( node[targetNode].cityLevel == 0 )
+        return "Settlement";//町の意味
       else
-        node[nodeNumber].Develop();
+        return "City";//町の意味
+
+    }
+
+    //都市の開発、もしくは町の開発
+    public String BuildNode(int nodeNumber, int holder){
+
+      //町の建設か、都市への発展で分岐
+      switch( whichDevelopment(nodeNumber) ){
+        case "Settlement":
+          node[nodeNumber].BuildVillage(holder);
+          return "Settlement";//町の意味
+
+        case "City":
+          //例外通知
+          if( node[nodeNumber].JudgeDevelopable(holder, nodeNumber) == false )
+            println("FieldInfomation -> BuildNode");
+
+          node[nodeNumber].Develop();
+          return "City";//都市の意味
+
+        default:
+          println("FieldInfomation -> BuildNode");
+          return "null";
+
+      }
+
+
     }
 
     //指定されたエッジに街道を作れるのかどうか判断

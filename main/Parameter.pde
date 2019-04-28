@@ -25,17 +25,17 @@ public static final int CITY_EFFECT_RANGE = 2;
 
 //資材の種類
 enum MaterialType{
-  Brick(0, "Brick"),
+  Brick (0, "Brick"),
   Lumber(1, "Lumber"),
-  Wool(2, "Wool"),
-  Grain(3, "Grain"),
-  Iron(4, "Iron"),
-  Empty(5, "Empty");
+  Wool  (2, "Wool"),
+  Grain (3, "Grain"),
+  Iron  (4, "Iron"),
+  Empty (5, "Empty");
 
-  private final int id;
+  private final int    id;
   private final String name;
   private MaterialType(final int id,final String name) {
-    this.id = id;
+    this.id   = id;
     this.name = name;
   }
   public int getId() {
@@ -90,13 +90,36 @@ enum AreaType{
   }
 }
 
+//カードの種類
+enum CardList{
+  Knight(14,     "Knight"),     //騎士
+  BuildLoad(2,   "BuildLoad"),   //街道建設
+  GetMaterial(2, "GetMaterial"), //収穫
+  Monopoly(2,    "Monopoly"),    //独占
+  Point(5,       "Point");        //勝利ポイント
+
+  private final int number;//各カードの枚数
+  private final String name;//各カードの名称
+  private CardList(int tmp, String tmp2){
+    this.number = tmp;
+    this.name = tmp2;
+  }
+  public int returnNumber(){
+    return this.number;
+  }
+  public String returnName(){
+    return this.name;
+  }
+}
+
+
 //プレイヤー関数が持つ選択肢の種類
 enum PlayerSelectable{
   dice("dice"),
-  chooseCard("chooseCard"),
-  tradeWithOther("tradeWithOther"),
-  useCard("useCard"),
   development("development"),
+  buyCard("buyCard"),
+  useCard("useCard"),
+  tradeWithOther("tradeWithOther"),
   endTurn("EndTurn");
 
   private final String text;

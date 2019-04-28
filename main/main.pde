@@ -3,6 +3,7 @@
 import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Collections;
 
 //メインステートマシン
 int drawCount;//経過フレームを数える
@@ -19,6 +20,10 @@ HashMap<String, PImage> ImageList_Number;
 HashMap<String, PImage> ImageList_City1;
 HashMap<String, PImage> ImageList_City2;
 PImage Image_nonCity;
+
+//カードリスト
+List<CardList> cards = new ArrayList<CardList>();
+
 
 void settings() {
   size(FIELD_LENGTH_X, FIELD_LENGTH_Y, P2D);
@@ -46,8 +51,6 @@ void init(){
    fieldInfomation  = new FieldInfomation();
    mainStateMachine = new MainStateMachine();
    keyPushJudge     = new KeyPushJudge();
-
-
 
 
    //画像
@@ -91,7 +94,7 @@ void init(){
   fieldInfomation.SetNodeOwner(6, 1, 2);
   fieldInfomation.SetNodeOwner(15, 1, 2);
   fieldInfomation.SetNodeOwner(30, 1, 1);
-  fieldInfomation.SetNodeOwner(53, 1, 2);
+  fieldInfomation.SetNodeOwner(53, 1, 1);
   fieldInfomation.SetNodeOwner(1, 2, 2);
   fieldInfomation.SetNodeOwner(5, 2, 1);
   fieldInfomation.SetNodeOwner(11, 2, 2);
@@ -124,6 +127,17 @@ void init(){
   fieldInfomation.SetEdgeOwner(13, 2);
   fieldInfomation.SetEdgeOwner(14, 2);
   fieldInfomation.SetEdgeOwner(15, 2);
+
+
+
+  //発展カードの初期化・シャッフル
+  for (CardList tmp : CardList.values()){
+    for(int i=0;i<tmp.returnNumber();i++){
+      cards.add(tmp);
+    }
+  }
+  Collections.shuffle(cards);
+  println(cards.get(0));
 }
 
 

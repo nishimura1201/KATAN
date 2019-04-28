@@ -299,16 +299,39 @@ public class FieldInfomation{
       edge[edgeNumber].SetHolder(holder);
     }
 
-    //都市の開発、もしくは町の開発
-    void BuildNode(int nodeNumber, int holder){
-      //例外処理
-      if( node[nodeNumber].JudgeDevelopable(holder, nodeNumber) == false )
-        println("FieldInfomation -> BuildNode\n");
-
-      if( node[nodeNumber].cityLevel == 0 )
-        node[nodeNumber].BuildVillage(holder);
+    //指定されたノードで行うのは，町の開発なのか，都市への発展なのか
+    String whichDevelopment(int targetNode){
+      if( node[targetNode].cityLevel == 0 )
+        return "Settlement";//町の意味
       else
-        node[nodeNumber].Develop();
+        return "City";//町の意味
+
+    }
+
+    //都市の開発、もしくは町の開発
+    String BuildNode(int nodeNumber, int holder){
+
+      //町の建設か、都市への発展で分岐
+      switch( whichDevelopment(nodeNumber) ){
+        case "Settlement":
+          node[nodeNumber].BuildVillage(holder);
+          return "Settlement";//町の意味
+
+        case "City":
+          //例外通知
+          if( node[nodeNumber].JudgeDevelopable(holder, nodeNumber) == false )
+            println("FieldInfomation -> BuildNode");
+
+          node[nodeNumber].Develop();
+          return "City";//都市の意味
+
+        default:
+          println("FieldInfomation -> BuildNode");
+          return "null";
+
+      }
+
+
     }
 
     //指定されたエッジに街道を作れるのかどうか判断
